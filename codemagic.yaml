@@ -1,0 +1,18 @@
+workflows:
+android-build:
+name: Android Build
+# The environment section specifies the build environment.
+environment:
+# This selects a pre-configured build machine with necessary tools.
+# You can change this if you need different versions of Node, Java, etc.
+# See Codemagic docs for available images.
+groups:
+- android-signing-key-release
+vars:
+REACT_NATIVE_VERSION: 0.72.17
+# This is the core of the workflow, where we define the commands to run.
+scripts:
+# This command installs all the Node.js packages in your package.json file.
+- name: Install dependencies
+script: |
+npm install
