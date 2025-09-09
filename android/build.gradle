@@ -1,0 +1,71 @@
+// Top-level build file for all sub-projects/modules.
+buildscript {
+    ext {
+        // Keep toolchain compatible with AGP 7.4.2
+        buildToolsVersion = "33.0.2"
+        minSdkVersion = 21
+        compileSdkVersion = 33
+        targetSdkVersion = 33
+        ndkVersion = "23.1.7779620"
+        kotlinVersion = "1.8.22"
+
+        // Optional props used by some libs (e.g., IAP)
+        playServicesVersion = "18.2.0"
+        playServicesLocationVersion = "21.0.1"
+        playBillingSdkVersion = "6.1.0"
+        amazonSdkVersion = "3.0.3"
+        isAmazonDrmEnabled = "false"
+    }
+    repositories {
+        google()
+        mavenCentral()
+        // React Native plugin / artifacts
+        maven { url "$rootDir/../node_modules/react-native/android" }
+    }
+    dependencies {
+        classpath("com.android.tools.build:gradle:7.4.2")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+        classpath("com.facebook.react:react-native-gradle-plugin")
+        classpath("com.google.gms:google-services:4.4.2")
+    }
+}
+
+allprojects {
+    repositories {
+        mavenCentral()
+        google()
+        // React Native local artifacts
+        maven { url "$rootDir/../node_modules/react-native/android" }
+        // JSC (optional when Hermes disabled)
+        maven { url("$rootDir/../node_modules/jsc-android/dist") }
+        // Additional repos used by transitive deps
+        maven { url "https://developer.huawei.com/repo/" }
+        maven { url "https://jitpack.io" }
+    }
+
+    // Remove deprecated jcenter() repository unintentionally added by some legacy plugin scripts
+    // (e.g. react-native-push-notification) to silence deprecation stack traces and avoid Gradle 8 breakage.
+    subprojects { sp ->
+        sp.afterEvaluate {
+            def removed = sp.repositories.removeAll { repo ->
+                try { repo.hasProperty('url') && repo.url?.toString()?.contains('jcenter') } catch(Exception ignored) { false }
+            }
+            if (removed) {
+                logger.lifecycle("Removed deprecated jcenter() repo from ${sp.path}")
+            }
+        }
+    }
+}
+
+// Enforce uniform Java compile level across all Android subprojects to avoid
+// mixed toolchains triggering classpath sync errors in the IDE. Safe for AGP 7.4.2.
+subprojects { sub ->
+    afterEvaluate {
+        if (sub.hasProperty('android') && sub.android.hasProperty('compileOptions')) {
+            sub.android.compileOptions {
+                sourceCompatibility JavaVersion.VERSION_11
+                targetCompatibility JavaVersion.VERSION_11
+            }
+        }
+    }
+}
