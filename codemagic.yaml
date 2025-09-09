@@ -26,9 +26,13 @@ workflows:
         script: |
           cd android
           chmod +x ./gradlew
+          ./gradlew --refresh-dependencies
           ./gradlew assembleRelease
 
     # The artifacts section tells Codemagic what files to save after a successful build.
     artifacts:
       # This saves the final APK file so you can download it.
       - android/app/build/outputs/**/*.apk
+
+    # The publishing section tells Codemagic where to send the final APK.
+    # We will not configure this now, but you can set it up later to publish to the Play Store.
