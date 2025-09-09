@@ -25,6 +25,7 @@ workflows:
       - name: Build Android Release
         script: |
           cd android
+          chmod +x ./gradlew
           ./gradlew assembleRelease
 
     # The artifacts section tells Codemagic what files to save after a successful build.
