@@ -1,0 +1,26 @@
+{
+  "extends": "@tsconfig/react-native/tsconfig.json",
+  "compilerOptions": {
+  "lib": ["ES2020", "DOM", "DOM.Iterable"],
+  "jsx": "react-jsx",
+  "moduleResolution": "node",
+  "typeRoots": ["./node_modules/@types", "./types"],
+  "types": ["jest", "node"],
+  "skipLibCheck": true,
+  "noImplicitAny": false,
+  "noEmit": true
+  },
+  "exclude": [
+    "node_modules",
+    "android",
+    "ios",
+    "backend"
+  ],
+  "include": [
+    "App.tsx",
+    "OrganizedCode/**/*",
+    "src/**/*",
+    "types.d.ts",
+    "types/**/*.d.ts"
+  ]
+}

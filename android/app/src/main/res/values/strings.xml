@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">buzz20</string>
+    <string name="report_sighting_short">Report Sighting</string>
+    <string name="report_sighting_long">Report Wildlife Sighting</string>
+    <!-- Placeholder Google Maps API key - replace with real key when needed -->
+    <string name="google_maps_api_key">AIzaSyDummy-Key-For-Development-Only-Replace-Me</string>
+</resources>

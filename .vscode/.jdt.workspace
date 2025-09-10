@@ -1,0 +1,18 @@
+# Java Language Server workspace configuration for React Native Android project
+# This forces proper Gradle project detection
+
+# Android Gradle project root
+android/
+
+# Gradle build files
+android/build.gradle
+android/settings.gradle
+android/app/build.gradle
+
+# Java source directories  
+android/app/src/main/java/
+android/app/src/debug/java/
+android/app/src/release/java/
+
+# Generated sources
+android/app/build/generated/source/

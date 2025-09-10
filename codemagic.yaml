@@ -1,0 +1,38 @@
+# A workflow is a set of commands that are run in a sequence.
+
+# This workflow is for building an Android app.
+workflows:
+  android-build:
+    name: Android Build
+    # The environment section specifies the build environment.
+    environment:
+      # This selects a pre-configured build machine with necessary tools.
+      # You can change this if you need different versions of Node, Java, etc.
+      # See Codemagic docs for available images.
+      groups:
+        - android-signing-key-release
+      vars:
+        REACT_NATIVE_VERSION: 0.72.17
+    # This is the core of the workflow, where we define the commands to run.
+    scripts:
+      # This command installs all the Node.js packages in your package.json file.
+      - name: Install dependencies
+        script: |
+          npm install
+
+      # This is the build command for the Android app.
+      # Codemagic will run this command, and its output is what we'll analyze for errors.
+      - name: Build Android Release
+        script: |
+          cd android
+          chmod +x ./gradlew
+          ./gradlew --refresh-dependencies
+          ./gradlew assembleRelease
+
+    # The artifacts section tells Codemagic what files to save after a successful build.
+    artifacts:
+      # This saves the final APK file so you can download it.
+      - android/app/build/outputs/**/*.apk
+
+    # The publishing section tells Codemagic where to send the final APK.
+    # We will not configure this now, but you can set it up later to publish to the Play Store.

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oh No Deer - Admin Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .table-container h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .status-low {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-high {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .refresh-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .refresh-btn:hover {
+            background: #5a67d8;
+        }
+
+        .timestamp {
+            color: #666;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🦌 Oh No Deer Admin Dashboard</h1>
+            <p>Monitor wildlife reports, hotspots, and system health</p>
+        </div>
+
+        <button class="refresh-btn" onclick="loadData()">🔄 Refresh Data</button>
+
+        <div id="error-container"></div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h3>📊 Total Reports</h3>
+                <div class="stat-number" id="total-reports">-</div>
+                <div class="stat-label">Wildlife sightings reported</div>
+            </div>
+
+            <div class="card">
+                <h3>🔥 Active Hotspots</h3>
+                <div class="stat-number" id="total-hotspots">-</div>
+                <div class="stat-label">High activity areas</div>
+            </div>
+
+            <div class="card">
+                <h3>⚠️ Low Activity</h3>
+                <div class="stat-number" id="low-hotspots">-</div>
+                <div class="stat-label">Low risk zones</div>
+            </div>
+
+            <div class="card">
+                <h3>🟡 Medium Activity</h3>
+                <div class="stat-number" id="medium-hotspots">-</div>
+                <div class="stat-label">Moderate risk zones</div>
+            </div>
+
+            <div class="card">
+                <h3>🔴 High Activity</h3>
+                <div class="stat-number" id="high-hotspots">-</div>
+                <div class="stat-label">High risk zones</div>
+            </div>
+
+            <div class="card">
+                <h3>🚨 Recent Errors</h3>
+                <div class="stat-number" id="error-count">-</div>
+                <div class="stat-label">System errors logged</div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <h3>📋 Recent Reports</h3>
+            <table id="reports-table">
+                <thead>
+                    <tr>
+                        <th>User ID</th>
+                        <th>Animal Type</th>
+                        <th>Count</th>
+                        <th>Location</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+                <tbody id="reports-body">
+                    <tr>
+                        <td colspan="5" class="loading">Loading reports...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-container">
+            <h3>🔥 Active Hotspots</h3>
+            <table id="hotspots-table">
+                <thead>
+                    <tr>
+                        <th>Grid ID</th>
+                        <th>Activity Level</th>
+                        <th>Report Count</th>
+                        <th>Location</th>
+                        <th>Last Updated</th>
+                    </tr>
+                </thead>
+                <tbody id="hotspots-body">
+                    <tr>
+                        <td colspan="5" class="loading">Loading hotspots...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-container">
+            <h3>🚨 Error Logs</h3>
+            <table id="errors-table">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Source</th>
+                        <th>Error Message</th>
+                        <th>User ID</th>
+                    </tr>
+                </thead>
+                <tbody id="errors-body">
+                    <tr>
+                        <td colspan="4" class="loading">Loading error logs...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase configuration - Replace with your actual config
+        const firebaseConfig = {
+            apiKey: "your-api-key",
+            authDomain: "your-project.firebaseapp.com",
+            projectId: "your-project-id",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "your-app-id"
+        };
+
+        // Initialize Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        import {
+            getFirestore,
+            collection,
+            getDocs,
+            query,
+            orderBy,
+            limit
+        } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js';
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // Global variables
+        let totalReports = 0;
+        let hotspotsCount = { low: 0, medium: 0, high: 0 };
+
+        // Load all data
+        async function loadData() {
+            try {
+                showLoading();
+                await Promise.all([
+                    loadReports(),
+                    loadHotspots(),
+                    loadErrors()
+                ]);
+                updateStats();
+            } catch (error) {
+                showError('Failed to load data: ' + error.message);
+            }
+        }
+
+        // Load wildlife reports
+        async function loadReports() {
+            try {
+                const reportsQuery = query(
+                    collection(db, 'wildlife_reports'),
+                    orderBy('timestamp', 'desc'),
+                    limit(20)
+                );
+                const querySnapshot = await getDocs(reportsQuery);
+
+                const tbody = document.getElementById('reports-body');
+                tbody.innerHTML = '';
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = createReportRow(data);
+                    tbody.appendChild(row);
+                });
+
+                totalReports = querySnapshot.size;
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                document.getElementById('reports-body').innerHTML =
+                    '<tr><td colspan="5" style="color: red;">Error loading reports</td></tr>';
+            }
+        }
+
+        // Load hotspots
+        async function loadHotspots() {
+            try {
+                const hotspotsQuery = query(
+                    collection(db, 'hotspots'),
+                    orderBy('lastUpdated', 'desc'),
+                    limit(20)
+                );
+                const querySnapshot = await getDocs(hotspotsQuery);
+
+                const tbody = document.getElementById('hotspots-body');
+                tbody.innerHTML = '';
+
+                hotspotsCount = { low: 0, medium: 0, high: 0 };
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = createHotspotRow(data);
+                    tbody.appendChild(row);
+
+                    // Count by activity level
+                    hotspotsCount[data.heatLevel.toLowerCase()]++;
+                });
+            } catch (error) {
+                console.error('Error loading hotspots:', error);
+                document.getElementById('hotspots-body').innerHTML =
+                    '<tr><td colspan="5" style="color: red;">Error loading hotspots</td></tr>';
+            }
+        }
+
+        // Load error logs
+        async function loadErrors() {
+            try {
+                const errorsQuery = query(
+                    collection(db, 'error_logs'),
+                    orderBy('timestamp', 'desc'),
+                    limit(20)
+                );
+                const querySnapshot = await getDocs(errorsQuery);
+
+                const tbody = document.getElementById('errors-body');
+                tbody.innerHTML = '';
+
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const row = createErrorRow(data);
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById('error-count').textContent = querySnapshot.size;
+            } catch (error) {
+                console.error('Error loading errors:', error);
+                document.getElementById('errors-body').innerHTML =
+                    '<tr><td colspan="4" style="color: red;">Error loading error logs</td></tr>';
+            }
+        }
+
+        // Create table row for report
+        function createReportRow(data) {
+            const row = document.createElement('tr');
+
+            const userId = data.userId || 'Anonymous';
+            const animalType = data.animalType || 'Unknown';
+            const count = data.animalCount || 1;
+            const location = data.location ?
+                `${data.location.latitude.toFixed(4)}, ${data.location.longitude.toFixed(4)}` :
+                'Unknown';
+            const timestamp = data.timestamp ?
+                new Date(data.timestamp.toDate()).toLocaleString() :
+                'Unknown';
+
+            row.innerHTML = `
+                <td>${userId.substring(0, 8)}...</td>
+                <td>${animalType}</td>
+                <td>${count}</td>
+                <td>${location}</td>
+                <td class="timestamp">${timestamp}</td>
+            `;
+
+            return row;
+        }
+
+        // Create table row for hotspot
+        function createHotspotRow(data) {
+            const row = document.createElement('tr');
+
+            const gridId = data.gridId || 'Unknown';
+            const heatLevel = data.heatLevel || 'Unknown';
+            const reportCount = data.reportCount || 0;
+            const location = data.coordinates ?
+                `${data.coordinates.latitude.toFixed(4)}, ${data.coordinates.longitude.toFixed(4)}` :
+                'Unknown';
+            const lastUpdated = data.lastUpdated ?
+                new Date(data.lastUpdated.toDate()).toLocaleString() :
+                'Unknown';
+
+            const statusClass = `status-${heatLevel.toLowerCase()}`;
+
+            row.innerHTML = `
+                <td>${gridId}</td>
+                <td><span class="status-badge ${statusClass}">${heatLevel}</span></td>
+                <td>${reportCount}</td>
+                <td>${location}</td>
+                <td class="timestamp">${lastUpdated}</td>
+            `;
+
+            return row;
+        }
+
+        // Create table row for error
+        function createErrorRow(data) {
+            const row = document.createElement('tr');
+
+            const timestamp = data.timestamp ?
+                new Date(data.timestamp.toDate()).toLocaleString() :
+                'Unknown';
+            const source = data.source || 'Unknown';
+            const errorMessage = data.errorMessage || 'No message';
+            const userId = data.userId || 'Anonymous';
+
+            row.innerHTML = `
+                <td class="timestamp">${timestamp}</td>
+                <td>${source}</td>
+                <td>${errorMessage}</td>
+                <td>${userId.substring(0, 8)}...</td>
+            `;
+
+            return row;
+        }
+
+        // Update statistics display
+        function updateStats() {
+            document.getElementById('total-reports').textContent = totalReports;
+            document.getElementById('total-hotspots').textContent =
+                hotspotsCount.low + hotspotsCount.medium + hotspotsCount.high;
+            document.getElementById('low-hotspots').textContent = hotspotsCount.low;
+            document.getElementById('medium-hotspots').textContent = hotspotsCount.medium;
+            document.getElementById('high-hotspots').textContent = hotspotsCount.high;
+        }
+
+        // Show loading state
+        function showLoading() {
+            document.getElementById('error-container').innerHTML = '';
+        }
+
+        // Show error message
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error';
+            errorDiv.textContent = message;
+            document.getElementById('error-container').appendChild(errorDiv);
+        }
+
+        // Auto-refresh every 30 seconds
+        setInterval(loadData, 30000);
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

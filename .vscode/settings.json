@@ -1,0 +1,48 @@
+{
+    "java.server.launchMode": "Standard",
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.import.gradle.wrapper.enabled": true,
+    "java.import.gradle.enabled": true,
+    "java.import.gradle.version": "7.6",
+    "java.jdt.ls.java.home": "C:\\Program Files\\Eclipse Adoptium\\jdk-17",
+    "java.import.gradle.java.home": "C:\\Program Files\\Eclipse Adoptium\\jdk-17",
+    "java.compile.nullAnalysis.mode": "automatic",
+    "java.autobuild.enabled": true,
+    "java.import.gradle.arguments": "--init-script gradle/init.gradle",
+    "java.import.gradle.offline.enabled": false,
+    "java.project.sourcePaths": [],
+    "java.project.outputPath": ".metadata",
+    "java.project.referencedLibraries": [],
+    "java.import.exclusions": [
+        "**/node_modules/**/build/**",
+        "**/node_modules/**/src/test/**",
+        "**/build/**",
+        "**/.gradle/**"
+    ],
+    "java.configuration.workspaceCacheLimit": 200,
+    "gradle.nestedProjects": true,
+    "java.maxConcurrentBuilds": 2,
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "C:\\Program Files\\Eclipse Adoptium\\jdk-17",
+            "default": true
+        }
+    ],
+    "java.import.gradle.jvmArguments": "-Xmx2048m -XX:MaxMetaspaceSize=512m",
+    "java.errors.incompleteClasspath.severity": "ignore",
+    "java.validate": true,
+    "java.completion.enabled": true,
+    "java.project.rootPath": "",
+    "files.exclude": {
+        "**/node_modules/**": true,
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "**/android/build/**": true,
+        "**/android/app/build/**": true,
+        "**/android/.gradle/**": true
+    }
+}
