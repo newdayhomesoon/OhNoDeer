@@ -2,9 +2,6 @@ rootProject.name = 'buzz20'
 
 includeBuild('../node_modules/@react-native/gradle-plugin')
 
-apply from: file("../node_modules/@react-native-community/cli-platform-android/native_modules.gradle")
-applyNativeModulesSettingsGradle(settings)
-
 // Manual project includes (autolinking not working)
 include ':@invertase_react-native-apple-authentication'
 project(':@invertase_react-native-apple-authentication').projectDir = new File(rootProject.projectDir, '../node_modules/@invertase/react-native-apple-authentication/android')
