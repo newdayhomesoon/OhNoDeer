@@ -108,7 +108,6 @@ dependencies {
 }
 
 // Autolink native modules
-applyNativeModulesAppBuildGradle(project)
 
 // Google services (Firebase) — apply plugin only if google-services.json exists
 def googleServicesCandidates = [
