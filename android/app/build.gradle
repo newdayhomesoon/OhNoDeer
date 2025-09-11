@@ -90,7 +90,6 @@ dependencies {
     implementation 'com.facebook.fresco:imagepipeline-okhttp3:2.6.0'
 
     // Manual native module dependencies (autolinking not working)
-    implementation project(':@invertase_react-native-apple-authentication')
     implementation project(':@react-native-async-storage_async-storage')
     implementation project(':@react-native-community_geolocation')
     implementation project(':@react-native-firebase_app')
