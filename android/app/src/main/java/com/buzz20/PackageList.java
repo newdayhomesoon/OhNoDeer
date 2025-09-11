@@ -12,7 +12,6 @@ import java.util.Arrays;
 import java.util.List;
 
 // Auto-generated packages based on react-native config
-import com.RNAppleAuthentication.AppleAuthenticationAndroidPackage;
 import com.reactnativecommunity.asyncstorage.AsyncStoragePackage;
 import com.reactnativecommunity.geolocation.GeolocationPackage;
 import io.invertase.firebase.app.ReactNativeFirebaseAppPackage;
@@ -79,7 +78,6 @@ public class PackageList {
   public List<ReactPackage> getPackages() {
     return Arrays.<ReactPackage>asList(
         new MainReactPackage(mConfig),
-        new AppleAuthenticationAndroidPackage(),
         new AsyncStoragePackage(),
         new GeolocationPackage(),
         new ReactNativeFirebaseAppPackage(),
