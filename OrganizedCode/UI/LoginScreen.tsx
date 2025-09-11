@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef} from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,9 @@ import {
   Alert,
   Modal,
   Platform,
+  TextInput,
+  KeyboardAvoidingView,
+  ActivityIndicator,
 } from 'react-native';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '../Storage/firebase/credentials';
@@ -16,6 +19,9 @@ import {
   GoogleAuthProvider,
   OAuthProvider,
   signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
 } from 'firebase/auth';
 import {auth, createUserProfile} from '../Storage/firebase/service';
 
@@ -26,6 +32,22 @@ type LoginScreenProps = {
 export default function LoginScreen({onLogin}: LoginScreenProps) {
   const [loading, setLoading] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailMode, setEmailMode] = useState<'login' | 'create'>('login');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [generalAuthError, setGeneralAuthError] = useState('');
+  const lastActionRef = useRef<number>(0);
+  const [showPassword, setShowPassword] = useState(false);
+
+  const throttle = (fn: () => void, delay = 700) => {
+    const now = Date.now();
+    if (now - lastActionRef.current < delay) return;
+    lastActionRef.current = now;
+    fn();
+  };
 
   useEffect(() => {
     // Configure Google Sign-In
@@ -125,100 +147,243 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
     }
   };
 
-  const handleEmailLogin = () => {
-    Alert.alert('Coming Soon', 'Email authentication will be available soon!');
+  const openEmailModal = () => {
+    setShowEmailModal(true);
+    setEmailMode('login');
+  };
+
+  const attemptEmailAuth = async () => {
+    // Clear previous inline errors
+    setEmailError('');
+    setPasswordError('');
+    setGeneralAuthError('');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      if (!trimmedEmail) setEmailError('Email is required');
+      if (!password) setPasswordError('Password is required');
+      return;
+    }
+    // Basic email regex (simple format validation)
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setEmailError('Invalid email format');
+      return;
+    }
+    // Password validation rules
+    const issues: string[] = [];
+    if (password.length < 10 || password.length > 15) {
+      issues.push('Password must be 10-15 characters long');
+    }
+    if (!/[0-9]/.test(password)) {
+      issues.push('Include at least one number');
+    }
+    if (!/[@#$&]/.test(password)) {
+      issues.push('Include at least one special character (@ # $ &)');
+    }
+    if (issues.length) {
+      setPasswordError(issues.join('\n'));
+      return;
+    }
+    setLoading(true);
+    try {
+      let userCred;
+      if (emailMode === 'login') {
+        try {
+          userCred = await signInWithEmailAndPassword(auth, trimmedEmail, password);
+        } catch (err: any) {
+          if (err?.code === 'auth/user-not-found') {
+            // Switch to create mode automatically
+            setEmailMode('create');
+            setGeneralAuthError('Account not found. Press Create to register.');
+            return;
+          }
+          throw err;
+        }
+      } else {
+        userCred = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
+      }
+      if (userCred) {
+        await createUserProfile(userCred.user.uid, userCred.user.email || trimmedEmail);
+        setShowEmailModal(false);
+        onLogin();
+      }
+    } catch (error: any) {
+      console.error('Email auth error:', error);
+      setGeneralAuthError(error?.message?.replace('Firebase:', '').trim() || 'Email authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forgotPassword = async () => {
+    setEmailError('');
+    setGeneralAuthError('');
+    if (!email.trim()) {
+      setEmailError('Enter your email to get a reset link');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setGeneralAuthError('Password reset email sent.');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setGeneralAuthError('Could not send reset email.');
+    }
   };
 
   return (
     <View style={styles.background}>
       <View style={styles.overlay}>
-        <View style={styles.headerSection}>
+        <View style={styles.headerSection}>   
           <Text style={styles.companyName}>Oh, No Deer</Text>
           <Text style={styles.motto}>
             Preventing wildlife collisions with a real time, live-alert,
             community driven platform
           </Text>
         </View>
-        <View style={styles.formSection}>
-          <Text style={styles.tagline}>Protect the wildlife</Text>
-          <Text style={[styles.tagline, styles.taglineMargin]}>
-            Secure your safety
-          </Text>
-          <Text style={styles.title}>Join the movement!</Text>
-          <TouchableOpacity
-            style={[styles.button, styles.googleButton]}
-            onPress={handleGoogleLogin}
-            disabled={loading}>
-            <Text style={[styles.buttonText, styles.googleButtonText]}>
-              Continue with Google
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.appleButton]}
-            onPress={handleAppleLogin}
-            disabled={loading}>
-            <Text style={[styles.buttonText, styles.appleButtonText]}>
-              Continue with Apple
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.button, styles.emailButton]}
-            onPress={handleEmailLogin}
-            disabled={loading}>
-            <Text style={[styles.buttonText, styles.emailButtonText]}>
-              Continue with Email
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.guestLink} onPress={handleGuestLogin}>
-            <Text style={styles.guestLinkText}>Continue as Guest</Text>
-          </TouchableOpacity>
 
-          <Modal
-            animationType="fade"
-            transparent={true}
-            visible={showGuestModal}
-            onRequestClose={() => setShowGuestModal(false)}>
-            <View style={styles.modalOverlay}>
-              <View style={styles.modalContent}>
-                <Text style={styles.modalTitle}>Wait!</Text>
-                <Text style={styles.modalText}>
-                  You can continue as a Guest, but you can only view sightings
-                  in your area.
-                </Text>
-                <Text style={styles.modalActionText}>
-                  Log in to get the full experience!
-                </Text>
+        <View style={styles.formSectionWrapper}>
+          <View style={styles.formSection}>  
+            <Text style={styles.tagline}>Protect the wildlife</Text>
+            <Text style={[styles.tagline, styles.taglineMargin]}>Secure your safety</Text>
+            <Text style={styles.title}>Join the movement!</Text>
+            <TouchableOpacity
+              style={[styles.button, styles.googleButton]}
+              onPress={() => throttle(handleGoogleLogin)}
+              disabled={loading}>
+              <Text style={[styles.buttonText, styles.googleButtonText]}>Continue with Google</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.appleButton]}
+              onPress={() => throttle(handleAppleLogin)}
+              disabled={loading}>
+              <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.button, styles.emailButton]}
+              onPress={() => throttle(openEmailModal)}
+              disabled={loading}>
+              <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+  <TouchableOpacity style={styles.guestLink} onPress={() => throttle(handleGuestLogin)}>
+          <Text style={styles.guestLinkText}>Continue as Guest</Text>
+        </TouchableOpacity>
+
+        {/* Guest Warning Modal */}
+        <Modal
+          animationType="fade"
+          transparent
+          visible={showGuestModal}
+          onRequestClose={() => setShowGuestModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Wait!</Text>
+              <Text style={styles.modalText}>
+                You can continue as a Guest, but you can only view sightings in your area.
+              </Text>
+              <Text style={styles.modalActionText}>Log in to get the full experience!</Text>
+              <TouchableOpacity style={styles.learnMoreLink} onPress={() => {}}>
+                <Text style={styles.learnMoreText}>Learn more about the app</Text>
+              </TouchableOpacity>
+              <View style={styles.modalButtons}>
                 <TouchableOpacity
-                  style={styles.learnMoreLink}
-                  onPress={() => {}}>
-                  <Text style={styles.learnMoreText}>
-                    Learn more about the app
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowGuestModal(false)}>
+                  <Text style={styles.modalButtonText}>Go back</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.continueButton]}
+                  onPress={() => throttle(confirmGuestLogin)}
+                  disabled={loading}>
+                  <Text style={[styles.modalButtonText, styles.continueButtonText]}>
+                    {loading ? 'Loading...' : 'Continue anyways'}
                   </Text>
                 </TouchableOpacity>
-                <View style={styles.modalButtons}>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.cancelButton]}
-                    onPress={() => setShowGuestModal(false)}>
-                    <Text style={styles.modalButtonText}>Go back</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.modalButton, styles.continueButton]}
-                    onPress={confirmGuestLogin}
-                    disabled={loading}>
-                    <Text
-                      style={[
-                        styles.modalButtonText,
-                        styles.continueButtonText,
-                      ]}>
-                      {loading ? 'Loading...' : 'Continue anyways'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
               </View>
             </View>
-          </Modal>
-        </View>
+          </View>
+        </Modal>
+
+        {/* Email Auth Modal */}
+        <Modal
+          animationType="fade"
+          transparent
+          visible={showEmailModal}
+          onRequestClose={() => setShowEmailModal(false)}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                {emailMode === 'login' ? 'Sign In' : 'Create Account'}
+              </Text>
+              <TextInput
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="Email"
+                placeholderTextColor="#718096"
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                editable={!loading}
+              />
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  placeholder="Password"
+                  placeholderTextColor="#718096"
+                  secureTextEntry={!showPassword}
+                  style={[styles.input, styles.passwordInput]}
+                  value={password}
+                  onChangeText={setPassword}
+                  editable={!loading}
+                />
+                <TouchableOpacity
+                  style={styles.passwordToggle}
+                  onPress={() => setShowPassword(p => !p)}
+                  disabled={loading}
+                >
+                  <Text style={styles.passwordToggleText}>{showPassword ? 'Hide' : 'Show'}</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={forgotPassword} style={styles.forgotLink}>
+                <Text style={styles.forgotLinkText}>Forgot password?</Text>
+              </TouchableOpacity>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowEmailModal(false)}
+                  disabled={loading}>
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.continueButton]}
+                  onPress={() => throttle(attemptEmailAuth)}
+                  disabled={loading}>
+                  <Text style={[styles.modalButtonText, styles.continueButtonText]}>
+                    {loading ? 'Please wait...' : emailMode === 'login' ? 'Login' : 'Create'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {(emailError || passwordError || generalAuthError) && (
+                <View style={styles.inlineErrors}>
+                  {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+                  {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+                  {generalAuthError ? <Text style={styles.errorText}>{generalAuthError}</Text> : null}
+                </View>
+              )}
+            </View>
+          </KeyboardAvoidingView>
+        </Modal>
       </View>
+      {loading && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color="#ffffff" />
+          <Text style={styles.loadingText}>Please wait...</Text>
+        </View>
+      )}
     </View>
   );
 }
@@ -233,13 +398,14 @@ const styles = StyleSheet.create({
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(10, 25, 41, 0.85)',
-    padding: 24,
-    justifyContent: 'space-between',
+    paddingHorizontal: 24,
+    paddingTop: Platform.select({ ios: 50, android: 40, default: 40 }),
   },
   headerSection: {
-    marginTop: '15%',
+    marginTop: 0, // moved higher per requirement
     alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
+    marginBottom: 20,
   },
   companyName: {
     fontSize: 36,
@@ -255,10 +421,14 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     paddingHorizontal: 10,
   },
+  formSectionWrapper: {
+    flexGrow: 1,
+    justifyContent: 'flex-end',
+  },
   formSection: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: '10%',
+    paddingBottom: 140, // push text/buttons further down
   },
   title: {
     fontSize: 28,
@@ -314,9 +484,12 @@ const styles = StyleSheet.create({
     color: '#1a365d',
   },
   guestLink: {
-    marginTop: 16,
-    padding: 12,
-    marginBottom: 30,
+    position: 'absolute',
+    bottom: Platform.select({ ios: 20, android: 16, default: 16 }),
+    left: 0,
+    right: 0,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
   guestLinkText: {
     color: 'rgba(255, 255, 255, 0.9)',
@@ -400,5 +573,72 @@ const styles = StyleSheet.create({
   },
   continueButtonText: {
     color: '#fff',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  input: {
+    backgroundColor: '#f7fafc',
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 14,
+    color: '#1a365d',
+  },
+  forgotLink: {
+    alignSelf: 'flex-end',
+    marginBottom: 12,
+  },
+  forgotLinkText: {
+    color: '#3182ce',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  inlineErrors: {
+    marginTop: 12,
+  },
+  errorText: {
+    color: '#e53e3e',
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  passwordWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  passwordInput: {
+    paddingRight: 80,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  passwordToggleText: {
+    color: '#3182ce',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
