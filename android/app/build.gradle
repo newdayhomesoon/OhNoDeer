@@ -109,7 +109,6 @@ dependencies {
 
 // Autolink native modules
 
-Google services (Firebase) - apply plugin only if google-services.json exists
 def googleServicesCandidates = [
     "src/play/debug/google-services.json",
     "src/debug/play/google-services.json",
