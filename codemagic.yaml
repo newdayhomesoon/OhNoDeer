@@ -7,8 +7,10 @@ workflows:
       vars:
         REACT_NATIVE_VERSION: 0.72.17
     scripts:
-      - name: Install dependencies
+      - name: Clean up and Install dependencies
         script: |
+          rm -rf node_modules
+          rm -f package-lock.json
           npm install
       - name: Build Android Release
         script: |
