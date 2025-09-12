@@ -55,6 +55,21 @@ android {
 }
 
 dependencies {
+    // This block forces all Google Play Services and Firebase libraries to use the same version,
+    // which resolves the IncompatibleClassChangeError crash.
+    configurations.all {
+        resolutionStrategy {
+            eachDependency { details ->
+                def requested = details.requested
+                if (requested.group == 'com.google.android.gms' || requested.group == 'com.google.firebase') {
+                    if (!requested.name.startsWith('react-native-firebase') && requested.name != 'firebase-core') {
+                        details.useVersion '18.0.0'
+                    }
+                }
+            }
+        }
+    }
+
     // React Native (version controlled by the RN Gradle Plugin)
     implementation("com.facebook.react:react-android")
 
@@ -108,7 +123,6 @@ dependencies {
 }
 
 // Autolink native modules
-
 def googleServicesCandidates = [
     "src/play/debug/google-services.json",
     "src/debug/play/google-services.json",
