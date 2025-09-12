@@ -55,15 +55,15 @@ android {
 }
 
 dependencies {
-    // This block forces all Google Play Services and Firebase libraries to use the same version,
-    // which resolves the IncompatibleClassChangeError crash.
+    // This block forces all Google Play Services and Firebase libraries to use the same version.
+    // This resolves the IncompatibleClassChangeError crash without introducing new "not found" errors.
     configurations.all {
         resolutionStrategy {
             eachDependency { details ->
                 def requested = details.requested
                 if (requested.group == 'com.google.android.gms' || requested.group == 'com.google.firebase') {
                     if (!requested.name.startsWith('react-native-firebase') && requested.name != 'firebase-core') {
-                        details.useVersion '18.0.0'
+                        details.useVersion '21.0.1'
                     }
                 }
             }
