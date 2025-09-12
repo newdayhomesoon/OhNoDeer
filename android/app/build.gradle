@@ -24,6 +24,9 @@ android {
         versionName "1.0"
         // Resolve react-native-iap store flavor ambiguity
         missingDimensionStrategy 'store', 'play'
+
+        // Add this manifest placeholder
+        manifestPlaceholders = [playServiceLicense: 'YOUR_GOOGLE_PLAY_LICENSE_KEY_HERE']
     }
 
     signingConfigs {
