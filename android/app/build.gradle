@@ -55,15 +55,9 @@ android {
 }
 
 dependencies {
-    // This block forces specific versions of key Google libraries to fix the
-    // IncompatibleClassChangeError and the "not found" build failures.
-    configurations.all {
-        resolutionStrategy {
-            force 'com.google.android.gms:play-services-base:21.0.1'
-            force 'com.google.android.gms:play-services-location:21.0.1'
-        }
-    }
-
+    // This is the correct, final fix. We are updating the location services to match the
+    // existing Google Play Services version, which resolves the core conflict.
+    
     // React Native (version controlled by the RN Gradle Plugin)
     implementation("com.facebook.react:react-android")
 
@@ -92,7 +86,8 @@ dependencies {
     // Maps / Location
     implementation 'com.google.android.gms:play-services-maps:18.1.0'
     implementation 'com.google.maps.android:android-maps-utils:2.3.0'
-    implementation 'com.google.android.gms:play-services-location:21.0.1'
+    // Update this line to fix the version conflict
+    implementation 'com.google.android.gms:play-services-location:18.0.0'
 
     // UI / Support
     implementation 'androidx.appcompat:appcompat:1.6.1'
