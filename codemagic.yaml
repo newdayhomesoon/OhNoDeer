@@ -18,6 +18,6 @@ workflows:
           chmod +x ./gradlew
           chmod +x ../node_modules/react-native/sdks/hermesc/osx-bin/hermesc
           ./gradlew --refresh-dependencies
-          ./gradlew assembleRelease
+          ./gradlew assemblePlayRelease
     artifacts:
       - android/app/build/outputs/**/*.apk
