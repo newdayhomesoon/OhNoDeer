@@ -58,9 +58,9 @@ android {
 }
 
 dependencies {
-    // This is the correct, final fix. We are updating the location services to match the
-    // existing Google Play Services version, which resolves the core conflict.
-    
+    // Use Google Play services BOM to keep play-services-* libraries in sync
+    implementation platform('com.google.android.gms:play-services-bom:18.5.0')
+
     // React Native (version controlled by the RN Gradle Plugin)
     implementation("com.facebook.react:react-android")
 
@@ -86,11 +86,10 @@ dependencies {
     implementation 'com.google.firebase:firebase-functions'
     implementation 'com.google.firebase:firebase-messaging'
 
-    // Maps / Location
-    implementation 'com.google.android.gms:play-services-maps:18.1.0'
+    // Maps / Location (versions now managed by BOM above)
+    implementation 'com.google.android.gms:play-services-maps'
+    implementation 'com.google.android.gms:play-services-location'
     implementation 'com.google.maps.android:android-maps-utils:2.3.0'
-    // Update this line to fix the version conflict
-    implementation 'com.google.android.gms:play-services-location:18.0.0'
 
     // UI / Support
     implementation 'androidx.appcompat:appcompat:1.6.1'
