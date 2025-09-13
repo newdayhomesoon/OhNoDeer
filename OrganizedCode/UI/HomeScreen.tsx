@@ -507,8 +507,10 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    // Allow child MapView to stretch fully
+    justifyContent: 'flex-start',
+    alignItems: 'stretch',
+    width: '100%',
   },
   mapPlaceholder: {
     width: '100%',
@@ -658,6 +660,7 @@ const styles = StyleSheet.create({
   },
   mapWithAdsContainer: {
     flex: 1,
+    width: '100%',
   },
   modalOverlay: {
     position: 'absolute',
