@@ -14,6 +14,7 @@ import QuantityUpdateModal from './QuantityUpdateModal';
 import SubscriptionScreen from './SubscriptionScreen';
 import AdBanner from './AdBanner';
 import WildlifeMap from './WildlifeMap';
+import ErrorBoundary from './ErrorBoundary';
 import {AnimalType, SightingReport, Location} from '../CoreLogic/types';
 import WildlifeReportsService, {
   AuthService,
@@ -50,59 +51,72 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   }, [activeTab]);
 
   useEffect(() => {
-    initializeServices();
+    // Defer service initialization slightly to isolate crashes unrelated to mount/render
+    const timer = setTimeout(() => {
+      initializeServices();
+    }, 400);
+    return () => clearTimeout(timer);
   }, []);
 
     const initializeServices = async () => {
     try {
-      console.log('Starting service initialization...');
+      console.log('[Init] Starting service initialization...');
       
       // Initialize ad service (non-critical)
       try {
+        console.log('[Init] adService.initialize:start');
         await adService.initialize();
+        console.log('[Init] adService.initialize:success');
       } catch (adError) {
-        console.warn('Ad service initialization failed:', adError);
+        console.warn('[Init] Ad service initialization failed:', adError);
       }
 
       // Initialize in-app purchase service (non-critical)
       try {
+        console.log('[Init] inAppPurchaseService.initialize:start');
         await inAppPurchaseService.initialize();
+        console.log('[Init] inAppPurchaseService.initialize:success');
       } catch (iapError) {
-        console.warn('In-app purchase service initialization failed:', iapError);
+        console.warn('[Init] In-app purchase service initialization failed:', iapError);
       }
 
       // Check subscription status (non-critical)
       try {
+        console.log('[Init] checkSubscriptionStatus:start');
         await checkSubscriptionStatus();
+        console.log('[Init] checkSubscriptionStatus:success');
       } catch (subError) {
-        console.warn('Subscription status check failed:', subError);
+        console.warn('[Init] Subscription status check failed:', subError);
       }
 
       // Initialize voice command service (non-critical)
       try {
+        console.log('[Init] voiceCommandService.initialize:start');
         await voiceCommandService.initialize();
+        console.log('[Init] voiceCommandService.initialize:success');
       } catch (voiceError) {
-        console.warn('Voice command service initialization failed:', voiceError);
+        console.warn('[Init] Voice command service initialization failed:', voiceError);
       }
 
       // Initialize background service with Pro status (now using simple service)
       try {
+        console.log('[Init] backgroundService.initialize:start');
         const backgroundInitialized = await backgroundService.initialize(isPro);
         if (backgroundInitialized) {
-          console.log('Simple background service initialized successfully');
+          console.log('[Init] backgroundService.initialize:success');
         } else {
-          console.log('Background service running in limited mode');
+          console.log('[Init] backgroundService.initialize:limited-mode');
         }
       } catch (backgroundError) {
-        console.error('Background service initialization failed:', backgroundError);
+        console.error('[Init] Background service initialization failed:', backgroundError);
         // Don't block the UI - continue with limited functionality
       }
 
       // Mark services as initialized
       setServicesInitialized(true);
-      console.log('All services initialization completed');
+      console.log('[Init] All services initialization completed');
     } catch (error) {
-      console.error('Critical error during service initialization:', error);
+      console.error('[Init] Critical error during service initialization:', error);
       // Still set initialized to true to prevent gray screen
       setServicesInitialized(true);
     }
@@ -310,10 +324,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         <View style={styles.mapContainer}>
           {activeTab === 'map' ? (
             <View style={styles.mapWithAdsContainer}>
-              <WildlifeMap
-                currentLocation={currentLocation}
-                onLocationUpdate={setCurrentLocation}
-              />
+              <ErrorBoundary>
+                <WildlifeMap
+                  currentLocation={currentLocation}
+                  onLocationUpdate={setCurrentLocation}
+                />
+              </ErrorBoundary>
               <AdBanner isPro={isPro} />
             </View>
           ) : activeTab === 'sightings' ? (

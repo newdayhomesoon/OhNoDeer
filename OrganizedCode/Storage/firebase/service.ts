@@ -23,6 +23,30 @@ import {
 } from 'firebase/firestore';
 import {getFunctions, httpsCallable} from 'firebase/functions';
 import {firebaseConfig, firebaseConfigIsPlaceholder} from './config';
+// Lightweight event listeners (avoid adding external deps)
+type ConnectivityListener = (state: { offline: boolean; lastChange: number }) => void;
+const connectivityListeners: ConnectivityListener[] = [];
+let connectivityState = { offline: false, lastChange: Date.now() };
+function notifyConnectivity() {
+  connectivityListeners.forEach(l => {
+    try { l(connectivityState); } catch {}
+  });
+}
+function setOffline(offline: boolean) {
+  if (connectivityState.offline !== offline) {
+    connectivityState = { offline, lastChange: Date.now() };
+    notifyConnectivity();
+  }
+}
+export function onFirestoreConnectivityChange(listener: ConnectivityListener) {
+  connectivityListeners.push(listener);
+  // immediate push current state
+  listener(connectivityState);
+  return () => {
+    const idx = connectivityListeners.indexOf(listener);
+    if (idx >= 0) connectivityListeners.splice(idx, 1);
+  };
+}
 
 // Types
 export interface WildlifeReport {
@@ -66,8 +90,34 @@ function requireApp(): ReturnType<typeof initializeApp> {
 }
 
 export const auth = (() => getAuth(requireApp()))();
-export const db = (() => getFirestore(requireApp()))();
-export const functions = (() => getFunctions(requireApp()))();
+export const db = (() => {
+  const instance = getFirestore(requireApp());
+  // Improve reliability in React Native / emulator or restricted network environments
+  // Only set settings if not already applied (avoids runtime warnings)
+  try {
+    // @ts-ignore - settings may not be strongly typed for these props in current version
+    instance.settings({
+      experimentalAutoDetectLongPolling: true,
+      useFetchStreams: false,
+    });
+  } catch (e) {
+    // Swallow setting errors silently (e.g., if called twice)
+  }
+  // Initial lightweight probe (non-fatal) to infer connectivity; uses a non-existent doc to reduce cost
+  (async () => {
+    try {
+      const probeRef = doc(instance, '__health', 'ping');
+      await getDoc(probeRef);
+      setOffline(false); // success -> online
+    } catch (e: any) {
+      if (e?.code === 'unavailable') setOffline(true);
+    }
+  })();
+  return instance;
+})();
+// Region hint (adjust if your functions are deployed elsewhere)
+const FUNCTIONS_REGION = process.env.FIREBASE_FUNCTIONS_REGION || 'us-central1';
+export const functions = (() => getFunctions(requireApp(), FUNCTIONS_REGION))();
 
 // Authentication
 export const signInUser = async (): Promise<User | null> => {
@@ -148,18 +198,26 @@ export const checkNearbyHotspots = async (
       {latitude: number; longitude: number},
       {hotspots: FirebaseHotspot[]; count: number}
     >(functions, 'checkHotspots');
-
-    const result = await checkHotspotsFunction({
-      latitude,
-      longitude,
-    });
-
-    return result.data;
+    try {
+      const result = await checkHotspotsFunction({ latitude, longitude });
+      return result.data;
+    } catch (err: any) {
+      if (err?.code === 'functions/not-found') {
+        console.warn('checkHotspots function not deployed yet - returning empty set');
+        return { hotspots: [], count: 0 };
+      }
+      throw err;
+    }
   } catch (error) {
     console.error('Error checking hotspots:', error);
+    if ((error as any)?.code === 'unavailable') setOffline(true);
     return {hotspots: [], count: 0};
   }
 };
+
+// Expose manual triggers for enabling/disabling network if desired later
+export async function markFirestoreOfflineForUI() { setOffline(true); }
+export async function markFirestoreOnlineForUI() { setOffline(false); }
 
 // User Profile
 export const getUserProfile = async (

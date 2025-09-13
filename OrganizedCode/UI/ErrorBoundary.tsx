@@ -1,3 +1,39 @@
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+
+interface ErrorBoundaryState { hasError: boolean; error?: Error; }
+
+export class ErrorBoundary extends React.Component<React.PropsWithChildren, ErrorBoundaryState> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error: Error, info: any) {
+    console.error('[ErrorBoundary] Caught error:', error, info?.componentStack);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.title}>Something went wrong loading this section.</Text>
+          <Text style={styles.message}>{this.state.error?.message}</Text>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+const styles = StyleSheet.create({
+  container: { padding: 16, flex: 1, justifyContent: 'center', alignItems: 'center' },
+  title: { color: '#fff', fontWeight: '600', fontSize: 16, marginBottom: 8, textAlign: 'center' },
+  message: { color: 'rgba(255,255,255,0.7)', fontSize: 12, textAlign: 'center' },
+});
+
+export default ErrorBoundary;
 import React, {Component, ErrorInfo, ReactNode} from 'react';
 import {View, Text, StyleSheet, TouchableOpacity, Alert} from 'react-native';
 

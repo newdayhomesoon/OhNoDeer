@@ -23,21 +23,43 @@ class SimpleBackgroundService {
   }
 
   private async initializeSound() {
-    this.alertSound = new Sound(
-      'alert_chime.mp3',
-      Sound.MAIN_BUNDLE,
-      (error: any) => {
-        if (error) {
-          console.log('Failed to load alert sound', error);
-        }
-      },
-    );
+    try {
+      console.log('[BG] Sound init start');
+      this.alertSound = new Sound(
+        'alert_chime.mp3',
+        Sound.MAIN_BUNDLE,
+        (error: any) => {
+          if (error) {
+            console.log('[BG] Failed to load alert sound', error);
+            this.diagnoseMissingSound();
+          } else {
+            console.log('[BG] Sound loaded successfully');
+          }
+        },
+      );
+    } catch (e) {
+      console.error('[BG] Sound init crash', e);
+    }
+  }
+
+  private diagnoseMissingSound() {
+    // Guidance logs to help CI / release builds
+    console.warn('[Sound Diagnostic] alert_chime.mp3 not found in bundle.');
+    console.warn('[Sound Diagnostic] Ensure file exists:');
+    console.warn('  iOS: Added to Xcode target (Copy Bundle Resources).');
+    console.warn('  Android: android/app/src/main/res/raw/alert_chime.mp3');
   }
 
   private initializeTTS() {
-    Tts.setDefaultLanguage('en-US');
-    Tts.setDefaultRate(0.5);
-    Tts.setDefaultPitch(1.0);
+    try {
+      console.log('[BG] TTS init start');
+      Tts.setDefaultLanguage('en-US');
+      Tts.setDefaultRate(0.5);
+      Tts.setDefaultPitch(1.0);
+      console.log('[BG] TTS init success');
+    } catch (e) {
+      console.error('[BG] TTS init crash', e);
+    }
   }
 
   private setupAppStateHandling() {
@@ -48,7 +70,7 @@ class SimpleBackgroundService {
   }
 
   async initialize(userIsPro: boolean = false): Promise<boolean> {
-    console.log('Initializing simple background service...');
+  console.log('[BG] Initializing simple background service...');
     
     if (this.isInitialized) {
       return true;
@@ -69,10 +91,10 @@ class SimpleBackgroundService {
       }
 
       this.isInitialized = true;
-      console.log('Simple background service initialized successfully');
+  console.log('[BG] Simple background service initialized successfully');
       return true;
     } catch (error) {
-      console.error('Failed to initialize background service:', error);
+  console.error('[BG] Failed to initialize background service:', error);
       // Still mark as initialized to prevent app crash
       this.isInitialized = true;
       return false;
@@ -140,7 +162,7 @@ class SimpleBackgroundService {
       return; // Already monitoring
     }
 
-    console.log('Starting location monitoring...');
+  console.log('[BG] Starting location monitoring...');
     
     // Temporarily disabled for app startup - geolocation package not linked
     // this.locationWatchId = Geolocation.watchPosition(
@@ -175,7 +197,7 @@ class SimpleBackgroundService {
       // Geolocation.clearWatch(this.locationWatchId);
       this.locationWatchId = null;
       this.locationWatchId = null;
-      console.log('Location monitoring stopped');
+  console.log('[BG] Location monitoring stopped');
     }
   }
 
@@ -194,7 +216,7 @@ class SimpleBackgroundService {
       return; // Already monitoring
     }
 
-    console.log('Starting geofence monitoring for Pro user...');
+  console.log('[BG] Starting geofence monitoring for Pro user...');
     
     // Check every 2 minutes for nearby hotspots
     this.geofenceCheckInterval = setInterval(() => {
@@ -208,7 +230,7 @@ class SimpleBackgroundService {
     if (this.geofenceCheckInterval) {
       clearInterval(this.geofenceCheckInterval);
       this.geofenceCheckInterval = null;
-      console.log('Geofence monitoring stopped');
+  console.log('[BG] Geofence monitoring stopped');
     }
   }
 
@@ -243,7 +265,7 @@ class SimpleBackgroundService {
       this.playAudioChime();
     }
 
-    console.log('Hotspot alert triggered:', hotspot.id);
+  console.log('[BG] Hotspot alert triggered:', hotspot.id);
   }
 
   private sendPushNotification(title: string, message: string) {
@@ -296,7 +318,7 @@ class SimpleBackgroundService {
     const wasProBefore = this.userIsPro;
     this.userIsPro = isPro;
     
-    console.log('User subscription updated:', isPro ? 'Pro' : 'Free');
+  console.log('[BG] User subscription updated:', isPro ? 'Pro' : 'Free');
     
     if (isPro && !wasProBefore) {
       // Upgraded to Pro - start geofence monitoring
@@ -308,7 +330,7 @@ class SimpleBackgroundService {
   }
 
   async stopService() {
-    console.log('Stopping background service...');
+  console.log('[BG] Stopping background service...');
     
     this.stopLocationMonitoring();
     this.stopGeofenceMonitoring();
