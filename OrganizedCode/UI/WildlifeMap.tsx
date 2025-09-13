@@ -81,6 +81,18 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
     }
   };
 
+  const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!mapReady && !mapError) {
+        console.warn('[Map] Not ready after 5s');
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [mapReady, mapError]);
+
   return (
     <View style={styles.container}>
       <MapView
@@ -92,6 +104,16 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
         // Temporarily disable user location layer to avoid FusedLocationProviderClient class mismatch crash
         // showsUserLocation
         // showsMyLocationButton
+        onMapReady={() => {
+          console.log('[Map] onMapReady');
+          setMapReady(true);
+        }}
+        onMapLoaded={() => console.log('[Map] onMapLoaded')}
+        onError={e => {
+          const msg = e?.nativeEvent?.error || 'unknown';
+          console.error('[Map] onError', msg);
+          setMapError(msg);
+        }}
         onRegionChangeComplete={(region: Region) => {
           // Optional: Load hotspots for new region if user pans far
           if (currentLocation) {
@@ -149,6 +171,17 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
             />
           ))}
       </MapView>
+
+      {!mapReady && !mapError && (
+        <View style={styles.overlayStatus}>
+          <Text style={styles.overlayText}>Loading map…</Text>
+        </View>
+      )}
+      {mapError && (
+        <View style={styles.overlayStatusError}>
+          <Text style={styles.overlayText}>Map error: {mapError}</Text>
+        </View>
+      )}
 
       {/* Legend */}
       <View style={styles.legend}>
@@ -242,6 +275,34 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+    backgroundColor: '#08111d',
+    borderWidth: 1,
+    borderColor: 'rgba(0,150,255,0.4)'
+  },
+  overlayStatus: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)'
+  },
+  overlayStatusError: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(120,0,0,0.4)'
+  },
+  overlayText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600'
   },
   legend: {
     position: 'absolute',
