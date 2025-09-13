@@ -58,8 +58,9 @@ android {
 }
 
 dependencies {
-    // Use Google Play services BOM (21.0.1 is a valid published version)
-    implementation platform('com.google.android.gms:play-services-bom:21.0.1')
+    // Explicit Google Play services versions (avoid BOM resolution issues in CI)
+    def playServicesMapsVersion = "19.0.0"
+    def playServicesLocationVersion = "21.0.1"
 
     // React Native (version controlled by the RN Gradle Plugin)
     implementation("com.facebook.react:react-android")
@@ -86,9 +87,9 @@ dependencies {
     implementation 'com.google.firebase:firebase-functions'
     implementation 'com.google.firebase:firebase-messaging'
 
-    // Maps / Location (versions now managed by BOM above)
-    implementation 'com.google.android.gms:play-services-maps'
-    implementation 'com.google.android.gms:play-services-location'
+    // Maps / Location (explicit versions to prevent missing BOM artifact failures)
+    implementation "com.google.android.gms:play-services-maps:${playServicesMapsVersion}"
+    implementation "com.google.android.gms:play-services-location:${playServicesLocationVersion}"
     implementation 'com.google.maps.android:android-maps-utils:2.3.0'
 
     // UI / Support
