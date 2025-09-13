@@ -14,10 +14,10 @@ android {
     // Use compileSdk 33 for AGP 7.4.2 compatibility
     compileSdkVersion 33
 
-    namespace "com.buzz20"
+    namespace "com.ohnodeer"
 
     defaultConfig {
-    applicationId "com.buzz20"
+    applicationId "com.ohnodeer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
