@@ -82,16 +82,15 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
   };
 
   const [mapReady, setMapReady] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (!mapReady && !mapError) {
+      if (!mapReady) {
         console.warn('[Map] Not ready after 5s');
       }
     }, 5000);
     return () => clearTimeout(timer);
-  }, [mapReady, mapError]);
+  }, [mapReady]);
 
   return (
     <View style={styles.container}>
@@ -109,11 +108,6 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
           setMapReady(true);
         }}
         onMapLoaded={() => console.log('[Map] onMapLoaded')}
-        onError={e => {
-          const msg = e?.nativeEvent?.error || 'unknown';
-          console.error('[Map] onError', msg);
-          setMapError(msg);
-        }}
         onRegionChangeComplete={(region: Region) => {
           // Optional: Load hotspots for new region if user pans far
           if (currentLocation) {
@@ -172,14 +166,9 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
           ))}
       </MapView>
 
-      {!mapReady && !mapError && (
+      {!mapReady && (
         <View style={styles.overlayStatus}>
           <Text style={styles.overlayText}>Loading map…</Text>
-        </View>
-      )}
-      {mapError && (
-        <View style={styles.overlayStatusError}>
-          <Text style={styles.overlayText}>Map error: {mapError}</Text>
         </View>
       )}
 
@@ -275,8 +264,10 @@ const styles = StyleSheet.create({
   },
   map: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     backgroundColor: '#08111d',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: 'rgba(0,150,255,0.4)'
   },
   overlayStatus: {
