@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from 'react';
 import {View, StyleSheet, Alert, Text} from 'react-native';
 import MapView, {Marker, Circle, PROVIDER_GOOGLE} from 'react-native-maps';
+import {featureFlags} from '../CoreLogic/featureFlags';
 import {
   checkNearbyHotspots,
   FirebaseHotspot,
@@ -86,8 +87,8 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={mapRegion}
-        showsUserLocation={false}
-        showsMyLocationButton={false}
+        showsUserLocation={featureFlags.ENABLE_USER_LOCATION}
+        showsMyLocationButton={featureFlags.ENABLE_USER_LOCATION}
         // Temporarily disable user location layer to avoid FusedLocationProviderClient class mismatch crash
         // showsUserLocation
         // showsMyLocationButton
@@ -118,6 +119,19 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
             strokeWidth={2}
           />
         ))}
+
+        {/* Development placeholder marker if no hotspots to verify map rendering */}
+        {hotspots.length === 0 && (
+          <Marker
+            coordinate={{
+              latitude: mapRegion.latitude,
+              longitude: mapRegion.longitude,
+            }}
+            title="Map Active"
+            description="Placeholder marker (no hotspots)"
+            pinColor="blue"
+          />
+        )}
 
         {/* Optional: Add markers for high-heat areas */}
         {hotspots
