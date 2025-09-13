@@ -41,6 +41,43 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:226934539990:android:87573e0a0258cc88466b77",
+        "android_client_info": {
+          "package_name": "com.ohnodeer"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "226934539990-cq9nsf768inmeosgl1o8819g2v8iv3pu.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ohnodeer",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "226934539990-f1k8fjlmu9c7661n7m2c2bo8muqs8bb5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBEiMOGl5C1Nre0IvlsjqGzuaNGhuAQkz0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "226934539990-f1k8fjlmu9c7661n7m2c2bo8muqs8bb5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
