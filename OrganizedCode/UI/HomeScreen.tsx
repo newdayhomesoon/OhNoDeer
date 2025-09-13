@@ -7,6 +7,8 @@ import {
   Alert,
   Platform,
   PermissionsAndroid,
+  Modal,
+  SafeAreaView,
 } from 'react-native';
 import AnimalSelectionModal from './AnimalSelectionModal';
 import QuantitySelectionModal from './QuantitySelectionModal';
@@ -43,6 +45,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [lastReportId, setLastReportId] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [servicesInitialized, setServicesInitialized] = useState(false);
+  const [isFullscreenMap, setIsFullscreenMap] = useState(false);
 
   useEffect(() => {
     if (activeTab === 'sightings') {
@@ -312,6 +315,14 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         <View style={styles.mapContainer}>
           {activeTab === 'map' ? (
             <View style={styles.mapWithAdsContainer}>
+              {/* Fullscreen (enlarge) button */}
+              <TouchableOpacity
+                style={styles.fullscreenButton}
+                onPress={() => setIsFullscreenMap(true)}
+                accessibilityLabel="Expand map to fullscreen"
+                testID="expandMapButton">
+                <Text style={styles.fullscreenButtonText}>⛶</Text>
+              </TouchableOpacity>
               <ErrorBoundary>
                 <WildlifeMap
                   currentLocation={currentLocation}
@@ -466,6 +477,29 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
             }}
           />
         )}
+
+        {/* Fullscreen Map Modal */}
+        <Modal
+          visible={isFullscreenMap}
+          animationType="fade"
+          onRequestClose={() => setIsFullscreenMap(false)}
+          transparent={false}>
+          <SafeAreaView style={styles.fullscreenModalContainer}>
+            <View style={styles.fullscreenInner}>
+              <TouchableOpacity
+                style={styles.fullscreenCloseButton}
+                onPress={() => setIsFullscreenMap(false)}
+                accessibilityLabel="Close fullscreen map"
+                testID="closeFullscreenMapButton">
+                <Text style={styles.fullscreenCloseButtonText}>✕</Text>
+              </TouchableOpacity>
+              <WildlifeMap
+                currentLocation={currentLocation}
+                onLocationUpdate={setCurrentLocation}
+              />
+            </View>
+          </SafeAreaView>
+        </Modal>
       </View>
     </View>
   );
@@ -661,6 +695,43 @@ const styles = StyleSheet.create({
   mapWithAdsContainer: {
     flex: 1,
     width: '100%',
+    position: 'relative',
+  },
+  fullscreenButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  fullscreenButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  fullscreenModalContainer: {
+    flex: 1,
+    backgroundColor: '#000',
+  },
+  fullscreenInner: {
+    flex: 1,
+  },
+  fullscreenCloseButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    zIndex: 30,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 10,
+    borderRadius: 24,
+  },
+  fullscreenCloseButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '700',
   },
   modalOverlay: {
     position: 'absolute',
