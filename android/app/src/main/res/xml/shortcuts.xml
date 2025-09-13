@@ -8,8 +8,8 @@
         android:shortcutLongLabel="@string/report_sighting_long">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.buzz20.ohnodeer"
-            android:targetClass="com.buzz20.ohnodeer.MainActivity">
+            android:targetPackage="com.buzz20"
+            android:targetClass="com.buzz20.MainActivity">
             <extra android:name="action" android:value="report_sighting" />
         </intent>
         <categories android:name="android.shortcut.conversation" />
