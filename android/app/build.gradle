@@ -58,8 +58,8 @@ android {
 }
 
 dependencies {
-    // Use Google Play services BOM to keep play-services-* libraries in sync
-    implementation platform('com.google.android.gms:play-services-bom:18.5.0')
+    // Use Google Play services BOM (21.0.1 is a valid published version)
+    implementation platform('com.google.android.gms:play-services-bom:21.0.1')
 
     // React Native (version controlled by the RN Gradle Plugin)
     implementation("com.facebook.react:react-android")
