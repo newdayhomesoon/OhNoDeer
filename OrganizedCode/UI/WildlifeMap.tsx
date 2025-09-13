@@ -86,8 +86,11 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={mapRegion}
-        showsUserLocation={true}
-        showsMyLocationButton={true}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        // Temporarily disable user location layer to avoid FusedLocationProviderClient class mismatch crash
+        // showsUserLocation
+        // showsMyLocationButton
         onRegionChangeComplete={(region: Region) => {
           // Optional: Load hotspots for new region if user pans far
           if (currentLocation) {

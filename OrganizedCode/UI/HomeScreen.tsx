@@ -12,7 +12,7 @@ import AnimalSelectionModal from './AnimalSelectionModal';
 import QuantitySelectionModal from './QuantitySelectionModal';
 import QuantityUpdateModal from './QuantityUpdateModal';
 import SubscriptionScreen from './SubscriptionScreen';
-import AdBanner from './AdBanner';
+// import AdBanner from './AdBanner'; // Temporarily disabled
 import WildlifeMap from './WildlifeMap';
 import ErrorBoundary from './ErrorBoundary';
 import {AnimalType, SightingReport, Location} from '../CoreLogic/types';
@@ -20,9 +20,9 @@ import WildlifeReportsService, {
   AuthService,
 } from '../Storage/wildlifeReportsService';
 import {backgroundService} from '../Storage/backgroundService';
-import {voiceCommandService} from '../Storage/voiceCommandService';
+// import {voiceCommandService} from '../Storage/voiceCommandService'; // Temporarily disabled
 import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
-import {adService} from '../Storage/adService';
+// import {adService} from '../Storage/adService'; // Temporarily disabled
 
 type HomeScreenProps = {
   onLogout: () => void;
@@ -62,14 +62,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     try {
       console.log('[Init] Starting service initialization...');
       
-      // Initialize ad service (non-critical)
-      try {
-        console.log('[Init] adService.initialize:start');
-        await adService.initialize();
-        console.log('[Init] adService.initialize:success');
-      } catch (adError) {
-        console.warn('[Init] Ad service initialization failed:', adError);
-      }
+      // Ad service temporarily disabled
+      console.log('[Init] adService.initialize:skipped');
 
       // Initialize in-app purchase service (non-critical)
       try {
@@ -89,14 +83,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         console.warn('[Init] Subscription status check failed:', subError);
       }
 
-      // Initialize voice command service (non-critical)
-      try {
-        console.log('[Init] voiceCommandService.initialize:start');
-        await voiceCommandService.initialize();
-        console.log('[Init] voiceCommandService.initialize:success');
-      } catch (voiceError) {
-        console.warn('[Init] Voice command service initialization failed:', voiceError);
-      }
+      // Voice command service temporarily disabled
+      console.log('[Init] voiceCommandService.initialize:skipped');
 
       // Initialize background service with Pro status (now using simple service)
       try {
@@ -330,7 +318,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   onLocationUpdate={setCurrentLocation}
                 />
               </ErrorBoundary>
-              <AdBanner isPro={isPro} />
+              {/* AdBanner temporarily removed */}
             </View>
           ) : activeTab === 'sightings' ? (
             <View style={styles.sightingsContainer}>
