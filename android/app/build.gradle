@@ -14,10 +14,10 @@ android {
     // Use compileSdk 33 for AGP 7.4.2 compatibility
     compileSdkVersion 33
 
-    namespace "com.buzz20"
+    namespace "com.ohnodeer"
 
     defaultConfig {
-        applicationId "com.buzz20"
+    applicationId "com.ohnodeer"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -41,11 +41,26 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            // Rename APK output for debug builds
+            applicationVariants.all { variant ->
+                if (variant.buildType.name == "debug") {
+                    variant.outputs.all { output ->
+                        outputFileName = "OhNoDeer-debug.apk"
+                    }
+                }
+            }
         }
         release {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            applicationVariants.all { variant ->
+                if (variant.buildType.name == "release") {
+                    variant.outputs.all { output ->
+                        outputFileName = "OhNoDeer-${variant.versionName}.apk"
+                    }
+                }
+            }
         }
     }
 
