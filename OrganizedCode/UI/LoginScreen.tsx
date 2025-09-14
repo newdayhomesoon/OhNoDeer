@@ -236,6 +236,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
   };
 
 
+
   return (
     <View style={styles.background}>
       <View style={styles.overlay}>
@@ -248,16 +249,17 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
           </Text>
         </View>
 
-        {/* Tagline and title, smaller and moved down */}
-        <View style={styles.formSectionWrapperTight}>
-          <View style={styles.formSectionTight}>  
-            <Text style={styles.taglineSmall}>Protect the wildlife <Text style={styles.taglineSmall}>Secure your safety</Text></Text>
-            <Text style={styles.titleLugrasimo}>Join the movement!</Text>
-            {/* All buttons and other content moved to bottom */}
-          </View>
+        {/* Spacer to push content to bottom */}
+        <View style={{flex: 1}} />
+
+        {/* Tagline and title just above buttons */}
+        <View style={styles.bottomTextSection}>
+          <Text style={styles.taglineSmall}>Protect the wildlife <Text style={styles.taglineSmall}>Secure your safety</Text></Text>
+          <Text style={styles.titleLugrasimo}>Join the movement!</Text>
         </View>
 
-        <View style={styles.bottomSection}>
+        {/* Button cluster at the bottom */}
+        <View style={styles.bottomButtonSection}>
           <TouchableOpacity
             style={[styles.button, styles.googleButton]}
             onPress={() => throttle(handleGoogleLogin)}
@@ -276,7 +278,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             disabled={loading}>
             <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.guestLink} onPress={() => throttle(handleGuestLogin)}>
+          <TouchableOpacity style={styles.guestButton} onPress={() => throttle(handleGuestLogin)}>
             <Text style={styles.guestLinkText}>Continue as Guest</Text>
           </TouchableOpacity>
         </View>
@@ -458,15 +460,23 @@ const styles = StyleSheet.create({
     marginBottom: 0,
     letterSpacing: 1.2,
   },
-  bottomSection: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+  bottomTextSection: {
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  bottomButtonSection: {
+    alignItems: 'center',
     paddingBottom: Platform.select({ ios: 24, android: 16, default: 16 }),
+    width: '100%',
+  },
+  guestButton: {
+    marginTop: 8,
+    marginBottom: 0,
     alignItems: 'center',
     width: '100%',
+    maxWidth: 300,
     backgroundColor: 'transparent',
+    paddingVertical: 12,
   },
   button: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
