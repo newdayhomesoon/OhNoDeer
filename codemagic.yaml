@@ -11,12 +11,20 @@ workflows:
         script: |
           rm -rf node_modules
           rm -f package-lock.json
+          rm -rf android/app/build
+          rm -rf android/build
+          rm -rf android/.gradle
+          rm -rf .gradle
+          rm -f android/app/src/main/assets/index.android.bundle
           npm install
+      - name: Bundle JS for Android
+        script: |
+          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
       - name: Build Android Release
         script: |
           cd android
           chmod +x ./gradlew
-          chmod +x ../node_modules/react-native/sdks/hermesc/osx-bin/hermesc
+          chmod +x ../node_modules/react-native/sdks/hermesc/osx-bin/hermesc || true
           ./gradlew --refresh-dependencies
           ./gradlew assemblePlayRelease
     artifacts:
