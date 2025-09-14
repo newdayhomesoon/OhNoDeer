@@ -8,7 +8,7 @@ import com.facebook.react.defaults.DefaultReactActivityDelegate;
 public class MainActivity extends ReactActivity {
   @Override
   protected String getMainComponentName() {
-    return "buzz20"; // JS component name unchanged
+    return "ohnodeer"; // JS component name unchanged
   }
 
   @Override
