@@ -15,6 +15,9 @@
 		6132EF182BDFF13200BBE14D /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 6132EF172BDFF13200BBE14D /* PrivacyInfo.xcprivacy */; };
 		7699B88040F8A987B510C191 /* libPods-buzz20-buzz20Tests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 19F6CBCC0A4E27FBF8BF4A61 /* libPods-buzz20-buzz20Tests.a */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
+		3A9C98290D1E4EE7BF670C66 /* Lugrasimo-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = D744B29A7B954AF897FFF68F /* Lugrasimo-Regular.ttf */; };
+		04A20C2A528E416AA913CC4B /* Lugrasimo-Regular.ttf.README in Resources */ = {isa = PBXBuildFile; fileRef = E16A1BED7CD6432998197A63 /* Lugrasimo-Regular.ttf.README */; };
+		95F734E07E7146BCAE1935C4 /* OFL.txt in Resources */ = {isa = PBXBuildFile; fileRef = DAB94F2F4A1D4AE1B609531A /* OFL.txt */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -46,6 +49,9 @@
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = buzz20/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		89C6BE57DB24E9ADA2F236DE /* Pods-buzz20-buzz20Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-buzz20-buzz20Tests.release.xcconfig"; path = "Target Support Files/Pods-buzz20-buzz20Tests/Pods-buzz20-buzz20Tests.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		D744B29A7B954AF897FFF68F /* Lugrasimo-Regular.ttf */ = {isa = PBXFileReference; name = "Lugrasimo-Regular.ttf"; path = "../assets/fonts/Lugrasimo-Regular.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		E16A1BED7CD6432998197A63 /* Lugrasimo-Regular.ttf.README */ = {isa = PBXFileReference; name = "Lugrasimo-Regular.ttf.README"; path = "../assets/fonts/Lugrasimo-Regular.ttf.README"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		DAB94F2F4A1D4AE1B609531A /* OFL.txt */ = {isa = PBXFileReference; name = "OFL.txt"; path = "../assets/fonts/OFL.txt"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -125,6 +131,7 @@
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				BBD78D7AC51CEA395F1C20DB /* Pods */,
+				8C3DF101DE374EB2AFDF3806 /* Resources */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -150,6 +157,17 @@
 			);
 			path = Pods;
 			sourceTree = "<group>";
+		};
+		8C3DF101DE374EB2AFDF3806 /* Resources */ = {
+			isa = "PBXGroup";
+			children = (
+				D744B29A7B954AF897FFF68F /* Lugrasimo-Regular.ttf */,
+				E16A1BED7CD6432998197A63 /* Lugrasimo-Regular.ttf.README */,
+				DAB94F2F4A1D4AE1B609531A /* OFL.txt */,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+			path = "";
 		};
 /* End PBXGroup section */
 
@@ -248,6 +266,9 @@
 				6132EF182BDFF13200BBE14D /* PrivacyInfo.xcprivacy in Resources */,
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
+				3A9C98290D1E4EE7BF670C66 /* Lugrasimo-Regular.ttf in Resources */,
+				04A20C2A528E416AA913CC4B /* Lugrasimo-Regular.ttf.README in Resources */,
+				95F734E07E7146BCAE1935C4 /* OFL.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

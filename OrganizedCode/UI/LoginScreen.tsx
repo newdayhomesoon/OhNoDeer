@@ -11,6 +11,9 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
 } from 'react-native';
+
+// Font loading for Lugrasimo
+// Removed expo-font import; using fontFamily style only
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '../Storage/firebase/credentials';
 import {appleAuth} from '@invertase/react-native-apple-authentication';
@@ -30,6 +33,7 @@ type LoginScreenProps = {
 };
 
 export default function LoginScreen({onLogin}: LoginScreenProps) {
+  // No font loading needed; fontFamily is set directly in styles
   const [loading, setLoading] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -231,46 +235,51 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
     }
   };
 
+
   return (
     <View style={styles.background}>
       <View style={styles.overlay}>
-        <View style={styles.headerSection}>   
-          <Text style={styles.companyName}>Oh, No Deer</Text>
-          <Text style={styles.motto}>
+        {/* Header: Oh, No Deer at very top, motto just below */}
+        <View style={styles.headerSectionTight}>
+          <Text style={styles.companyNameLugrasimo}>Oh, No Deer</Text>
+          <Text style={styles.mottoTight}>
             Preventing wildlife collisions with a real time, live-alert,
             community driven platform
           </Text>
         </View>
 
-        <View style={styles.formSectionWrapper}>
-          <View style={styles.formSection}>  
-            <Text style={styles.tagline}>Protect the wildlife</Text>
-            <Text style={[styles.tagline, styles.taglineMargin]}>Secure your safety</Text>
-            <Text style={styles.title}>Join the movement!</Text>
-            <TouchableOpacity
-              style={[styles.button, styles.googleButton]}
-              onPress={() => throttle(handleGoogleLogin)}
-              disabled={loading}>
-              <Text style={[styles.buttonText, styles.googleButtonText]}>Continue with Google</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.appleButton]}
-              onPress={() => throttle(handleAppleLogin)}
-              disabled={loading}>
-              <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.button, styles.emailButton]}
-              onPress={() => throttle(openEmailModal)}
-              disabled={loading}>
-              <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
-            </TouchableOpacity>
+        {/* Tagline and title, smaller and moved down */}
+        <View style={styles.formSectionWrapperTight}>
+          <View style={styles.formSectionTight}>  
+            <Text style={styles.taglineSmall}>Protect the wildlife <Text style={styles.taglineSmall}>Secure your safety</Text></Text>
+            <Text style={styles.titleLugrasimo}>Join the movement!</Text>
+            {/* All buttons and other content moved to bottom */}
           </View>
         </View>
 
-  <TouchableOpacity style={styles.guestLink} onPress={() => throttle(handleGuestLogin)}>
-          <Text style={styles.guestLinkText}>Continue as Guest</Text>
-        </TouchableOpacity>
+        <View style={styles.bottomSection}>
+          <TouchableOpacity
+            style={[styles.button, styles.googleButton]}
+            onPress={() => throttle(handleGoogleLogin)}
+            disabled={loading}>
+            <Text style={[styles.buttonText, styles.googleButtonText]}>Continue with Google</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.appleButton]}
+            onPress={() => throttle(handleAppleLogin)}
+            disabled={loading}>
+            <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, styles.emailButton]}
+            onPress={() => throttle(openEmailModal)}
+            disabled={loading}>
+            <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.guestLink} onPress={() => throttle(handleGuestLogin)}>
+            <Text style={styles.guestLinkText}>Continue as Guest</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Guest Warning Modal */}
         <Modal
@@ -393,59 +402,71 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: '#0a1929', // Dark blue background
+    backgroundColor: '#0a1929',
   },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(10, 25, 41, 0.85)',
     paddingHorizontal: 24,
-    paddingTop: Platform.select({ ios: 50, android: 40, default: 40 }),
+    paddingTop: Platform.select({ ios: 0, android: 0, default: 0 }),
   },
-  headerSection: {
-    marginTop: 0, // moved higher per requirement
+  headerSectionTight: {
+    marginTop: Platform.select({ ios: 10, android: 10, default: 10 }),
     alignItems: 'center',
     paddingHorizontal: 8,
-    marginBottom: 20,
+    marginBottom: 4,
   },
-  companyName: {
-    fontSize: 36,
-    fontWeight: '800',
+  companyNameLugrasimo: {
+    fontSize: 38,
     color: '#fff',
     textAlign: 'center',
-    marginBottom: 16,
+    fontFamily: 'Lugrasimo-Regular',
+    marginTop: Platform.select({ ios: 10, android: 10, default: 10 }),
+    marginBottom: 2,
+    letterSpacing: 1.5,
   },
-  motto: {
-    fontSize: 16,
+  mottoTight: {
+    fontSize: 13,
     color: 'rgba(255, 255, 255, 0.85)',
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 18,
     paddingHorizontal: 10,
+    marginBottom: 8,
   },
-  formSectionWrapper: {
+  formSectionWrapperTight: {
     flexGrow: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
   },
-  formSection: {
+  formSectionTight: {
     width: '100%',
     alignItems: 'center',
-    paddingBottom: 140, // push text/buttons further down
+    marginTop: 0,
+    marginBottom: 0,
   },
-  title: {
-    fontSize: 28,
+  taglineSmall: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    textAlign: 'center',
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  titleLugrasimo: {
+    fontSize: 32,
     color: '#fff',
-    marginBottom: 16,
-    fontWeight: '700',
     textAlign: 'center',
+    fontFamily: 'Lugrasimo-Regular',
+    marginBottom: 0,
+    letterSpacing: 1.2,
   },
-  tagline: {
-    fontSize: 22,
-    color: 'rgba(255, 255, 255, 0.9)',
-    textAlign: 'center',
-    fontWeight: '600',
-    lineHeight: 32,
-  },
-  taglineMargin: {
-    marginBottom: 24,
+  bottomSection: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingBottom: Platform.select({ ios: 24, android: 16, default: 16 }),
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'transparent',
   },
   button: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
