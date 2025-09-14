@@ -10,6 +10,7 @@ import {
   Modal,
   SafeAreaView,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimalSelectionModal from './AnimalSelectionModal';
 import QuantitySelectionModal from './QuantitySelectionModal';
 import QuantityUpdateModal from './QuantityUpdateModal';
@@ -25,6 +26,7 @@ import {backgroundService} from '../Storage/backgroundService';
 // import {voiceCommandService} from '../Storage/voiceCommandService'; // Temporarily disabled
 import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
 // import {adService} from '../Storage/adService'; // Temporarily disabled
+import { getCurrentUser } from '../Storage/firebase/service';
 
 type HomeScreenProps = {
   onLogout: () => void;
@@ -46,6 +48,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [isPro, setIsPro] = useState(false);
   const [servicesInitialized, setServicesInitialized] = useState(false);
   const [isFullscreenMap, setIsFullscreenMap] = useState(false);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [userName, setUserName] = useState<string>('');
 
   useEffect(() => {
     if (activeTab === 'sightings') {
@@ -61,10 +65,24 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     return () => clearTimeout(timer);
   }, []);
 
-    const initializeServices = async () => {
+  useEffect(() => {
+    // Check if this is the user's first login
+    (async () => {
+      const hasSeenWelcome = await AsyncStorage.getItem('hasSeenWelcome');
+      if (!hasSeenWelcome) {
+        // Try to get user info
+        const user = getCurrentUser();
+        let name = user?.displayName || user?.email || 'New User';
+        setUserName(name);
+        setShowWelcomeModal(true);
+      }
+    })();
+  }, []);
+
+  const initializeServices = async () => {
     try {
       console.log('[Init] Starting service initialization...');
-      
+
       // Ad service temporarily disabled
       console.log('[Init] adService.initialize:skipped');
 
@@ -293,6 +311,11 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     setShowSubscriptionScreen(true);
   };
 
+  const handleWelcomeContinue = async () => {
+    await AsyncStorage.setItem('hasSeenWelcome', 'true');
+    setShowWelcomeModal(false);
+  };
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
   };
@@ -499,6 +522,31 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               />
             </View>
           </SafeAreaView>
+        </Modal>
+
+        <Modal
+          visible={showWelcomeModal}
+          animationType="fade"
+          transparent
+          onRequestClose={handleWelcomeContinue}
+        >
+          <View style={styles.welcomeModalOverlay}>
+            <View style={styles.welcomeModalContent}>
+              <Text style={styles.welcomeTitle}>Welcome, {userName}!</Text>
+              <Text style={styles.welcomeText}>
+                This app is built to provide irreplaceable safety on and off the road!{"\n"}
+                To make the best use of this community driven platform, be sure to log any wildlife sightings with our buttons or through Google/Siri commands!
+              </Text>
+              <TouchableOpacity onPress={() => {/* TODO: link to info page */}}>
+                <Text style={styles.welcomeLink}>
+                  Read more information about how we keep our roadways safe
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.welcomeContinueButton} onPress={handleWelcomeContinue}>
+                <Text style={styles.welcomeContinueButtonText}>Continue</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
         </Modal>
       </View>
     </View>
@@ -756,5 +804,56 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontWeight: '600',
     fontSize: 16,
+  },
+  welcomeModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  welcomeModalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 20,
+    padding: 28,
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+  },
+  welcomeTitle: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: '#1a365d',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  welcomeText: {
+    fontSize: 16,
+    color: '#4a5568',
+    textAlign: 'center',
+    marginBottom: 18,
+    lineHeight: 22,
+  },
+  welcomeLink: {
+    color: '#3182ce',
+    fontSize: 15,
+    textDecorationLine: 'underline',
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  welcomeContinueButton: {
+    backgroundColor: '#3182ce',
+    borderRadius: 30,
+    paddingVertical: 16,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 260,
+  },
+  welcomeContinueButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });
