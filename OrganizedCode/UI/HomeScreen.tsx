@@ -10,7 +10,9 @@ import {
   Modal,
   SafeAreaView,
   ScrollView,
+  Switch,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimalSelectionModal from './AnimalSelectionModal';
 import QuantitySelectionModal from './QuantitySelectionModal';
 import QuantityUpdateModal from './QuantityUpdateModal';
@@ -18,10 +20,12 @@ import SubscriptionScreen from './SubscriptionScreen';
 // import AdBanner from './AdBanner'; // Temporarily disabled
 import WildlifeMap from './WildlifeMap';
 import ErrorBoundary from './ErrorBoundary';
-import {AnimalType, SightingReport, Location} from '../CoreLogic/types';
-import WildlifeReportsService, {
+import {auth, getCurrentUser, onAuthStateChange} from '../Storage/firebase/service';
+import {
+  WildlifeReportsService,
   AuthService,
 } from '../Storage/wildlifeReportsService';
+import {AnimalType, SightingReport, Location} from '../CoreLogic/types';
 import {backgroundService} from '../Storage/backgroundService';
 // import {voiceCommandService} from '../Storage/voiceCommandService'; // Temporarily disabled
 import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
@@ -38,7 +42,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalType | null>(null);
   const [recentSightings, setRecentSightings] = useState<SightingReport[]>([]);
-  const [activeTab, setActiveTab] = useState<'map' | 'sightings' | 'profile' | 'profile_info'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'sightings' | 'profile' | 'profile_info' | 'settings'>('map');
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [_locationError, setLocationError] = useState<string | null>(null);
   const [lastReportId, setLastReportId] = useState<string | null>(null);
@@ -54,6 +58,18 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     moose: 0,
     smallMammals: 0,
   });
+  
+  // Settings state variables
+  const [settingsTab, setSettingsTab] = useState<'preferences' | 'notifications' | 'privacy' | 'about'>('preferences');
+  const [locationAccessEnabled, setLocationAccessEnabled] = useState(true);
+  const [showLegend, setShowLegend] = useState(true);
+  const [units, setUnits] = useState<'miles' | 'kilometers'>('miles');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [newSightingsNotifications, setNewSightingsNotifications] = useState(true);
+  const [promotionalNotifications, setPromotionalNotifications] = useState(true);
+  const [appUpdateNotifications, setAppUpdateNotifications] = useState(true);
+  const [notificationRadius, setNotificationRadius] = useState(5);
+  const [anonymousSightings, setAnonymousSightings] = useState(false);
 
   // Removed: useEffect for sightings tab
 
@@ -166,6 +182,51 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       loadRecentSightings();
     }
   }, [activeTab]);
+
+  // Load settings from AsyncStorage
+  useEffect(() => {
+    const loadSettings = async () => {
+      try {
+        const settings = await AsyncStorage.getItem('appSettings');
+        if (settings) {
+          const parsedSettings = JSON.parse(settings);
+          setLocationAccessEnabled(parsedSettings.locationAccessEnabled ?? true);
+          setShowLegend(parsedSettings.showLegend ?? true);
+          setUnits(parsedSettings.units ?? 'miles');
+          setNotificationsEnabled(parsedSettings.notificationsEnabled ?? true);
+          setNewSightingsNotifications(parsedSettings.newSightingsNotifications ?? true);
+          setPromotionalNotifications(parsedSettings.promotionalNotifications ?? true);
+          setAppUpdateNotifications(parsedSettings.appUpdateNotifications ?? true);
+          setNotificationRadius(parsedSettings.notificationRadius ?? 5);
+          setAnonymousSightings(parsedSettings.anonymousSightings ?? false);
+        }
+      } catch (error) {
+        console.warn('Failed to load settings:', error);
+      }
+    };
+    loadSettings();
+  }, []);
+
+  // Save settings to AsyncStorage
+  const saveSettings = async (newSettings: any) => {
+    try {
+      const currentSettings = {
+        locationAccessEnabled,
+        showLegend,
+        units,
+        notificationsEnabled,
+        newSightingsNotifications,
+        promotionalNotifications,
+        appUpdateNotifications,
+        notificationRadius,
+        anonymousSightings,
+        ...newSettings,
+      };
+      await AsyncStorage.setItem('appSettings', JSON.stringify(currentSettings));
+    } catch (error) {
+      console.warn('Failed to save settings:', error);
+    }
+  };
 
   const getCurrentLocation = () => {
     // Location services disabled - use manual location entry instead
@@ -514,6 +575,245 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 </View>
               )}
             </View>
+          ) : activeTab === 'settings' ? (
+            <View style={styles.settingsContainer}>
+              <View style={styles.settingsHeader}>
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => setActiveTab('profile')}>
+                  <Text style={styles.backButtonText}>‹ Back</Text>
+                </TouchableOpacity>
+                <Text style={styles.sectionTitle}>Settings</Text>
+              </View>
+
+              {/* Settings Sub-tabs */}
+              <View style={styles.settingsTabs}>
+                <TouchableOpacity 
+                  style={[styles.settingsTabButton, settingsTab === 'preferences' && styles.activeSettingsTabButton]}
+                  onPress={() => setSettingsTab('preferences')}>
+                  <Text style={[styles.settingsTabButtonText, settingsTab === 'preferences' && styles.activeSettingsTabButtonText]}>
+                    App Preferences
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.settingsTabButton, settingsTab === 'notifications' && styles.activeSettingsTabButton]}
+                  onPress={() => setSettingsTab('notifications')}>
+                  <Text style={[styles.settingsTabButtonText, settingsTab === 'notifications' && styles.activeSettingsTabButtonText]}>
+                    Notifications
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.settingsTabButton, settingsTab === 'privacy' && styles.activeSettingsTabButton]}
+                  onPress={() => setSettingsTab('privacy')}>
+                  <Text style={[styles.settingsTabButtonText, settingsTab === 'privacy' && styles.activeSettingsTabButtonText]}>
+                    Privacy & Security
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.settingsTabButton, settingsTab === 'about' && styles.activeSettingsTabButton]}
+                  onPress={() => setSettingsTab('about')}>
+                  <Text style={[styles.settingsTabButtonText, settingsTab === 'about' && styles.activeSettingsTabButtonText]}>
+                    General & About
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Settings Content */}
+              {settingsTab === 'preferences' ? (
+                <View style={styles.settingsContent}>
+                  <Text style={styles.subSectionTitle}>App Preferences</Text>
+                  
+                  {/* Location Access Toggle */}
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>Location Access</Text>
+                    <Switch
+                      value={locationAccessEnabled}
+                      onValueChange={(value) => {
+                        if (!value) {
+                          Alert.alert(
+                            'Disable Location Access',
+                            'This app needs your location to properly function.\n\nTo continue disabling location access, go to your device settings and disable location permissions for this app.',
+                            [{ text: 'OK' }]
+                          );
+                        } else {
+                          setLocationAccessEnabled(value);
+                          saveSettings({ locationAccessEnabled: value });
+                        }
+                      }}
+                      trackColor={{ false: '#767577', true: '#81b0ff' }}
+                      thumbColor={locationAccessEnabled ? '#f5dd4b' : '#f4f3f4'}
+                    />
+                  </View>
+
+                  {/* Legend Toggle */}
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>Show Map Legend</Text>
+                    <Switch
+                      value={showLegend}
+                      onValueChange={(value) => {
+                        setShowLegend(value);
+                        saveSettings({ showLegend: value });
+                      }}
+                      trackColor={{ false: '#767577', true: '#81b0ff' }}
+                      thumbColor={showLegend ? '#f5dd4b' : '#f4f3f4'}
+                    />
+                  </View>
+
+                  {/* Units Selection */}
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>Units of Measurement</Text>
+                    <View style={styles.unitsSelector}>
+                      <TouchableOpacity 
+                        style={[styles.unitButton, units === 'miles' && styles.activeUnitButton]}
+                        onPress={() => {
+                          setUnits('miles');
+                          saveSettings({ units: 'miles' });
+                        }}>
+                        <Text style={[styles.unitButtonText, units === 'miles' && styles.activeUnitButtonText]}>Miles</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={[styles.unitButton, units === 'kilometers' && styles.activeUnitButton]}
+                        onPress={() => {
+                          setUnits('kilometers');
+                          saveSettings({ units: 'kilometers' });
+                        }}>
+                        <Text style={[styles.unitButtonText, units === 'kilometers' && styles.activeUnitButtonText]}>Kilometers</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              ) : settingsTab === 'notifications' ? (
+                <View style={styles.settingsContent}>
+                  <Text style={styles.subSectionTitle}>Notification Settings</Text>
+                  
+                  {/* Master Toggle */}
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>Enable All Notifications</Text>
+                    <Switch
+                      value={notificationsEnabled}
+                      onValueChange={(value) => {
+                        setNotificationsEnabled(value);
+                        saveSettings({ notificationsEnabled: value });
+                      }}
+                      trackColor={{ false: '#767577', true: '#81b0ff' }}
+                      thumbColor={notificationsEnabled ? '#f5dd4b' : '#f4f3f4'}
+                    />
+                  </View>
+
+                  {/* Sub-toggles */}
+                  <View style={styles.notificationSubSettings}>
+                    <View style={styles.settingRow}>
+                      <Text style={styles.subSettingLabel}>New Sightings</Text>
+                      <Switch
+                        value={newSightingsNotifications && notificationsEnabled}
+                        onValueChange={(value) => {
+                          setNewSightingsNotifications(value);
+                          saveSettings({ newSightingsNotifications: value });
+                        }}
+                        disabled={!notificationsEnabled}
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                        thumbColor={(newSightingsNotifications && notificationsEnabled) ? '#f5dd4b' : '#f4f3f4'}
+                      />
+                    </View>
+                    
+                    <View style={styles.settingRow}>
+                      <Text style={styles.subSettingLabel}>Promotional</Text>
+                      <Switch
+                        value={promotionalNotifications && notificationsEnabled}
+                        onValueChange={(value) => {
+                          setPromotionalNotifications(value);
+                          saveSettings({ promotionalNotifications: value });
+                        }}
+                        disabled={!notificationsEnabled}
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                        thumbColor={(promotionalNotifications && notificationsEnabled) ? '#f5dd4b' : '#f4f3f4'}
+                      />
+                    </View>
+                    
+                    <View style={styles.settingRow}>
+                      <Text style={styles.subSettingLabel}>App Updates</Text>
+                      <Switch
+                        value={appUpdateNotifications && notificationsEnabled}
+                        onValueChange={(value) => {
+                          setAppUpdateNotifications(value);
+                          saveSettings({ appUpdateNotifications: value });
+                        }}
+                        disabled={!notificationsEnabled}
+                        trackColor={{ false: '#767577', true: '#81b0ff' }}
+                        thumbColor={(appUpdateNotifications && notificationsEnabled) ? '#f5dd4b' : '#f4f3f4'}
+                      />
+                    </View>
+                  </View>
+
+                  {/* Notification Radius */}
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>Notification Radius</Text>
+                    <View style={styles.radiusSelector}>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                        {[0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((radius) => (
+                          <TouchableOpacity
+                            key={radius}
+                            style={[styles.radiusButton, notificationRadius === radius && styles.activeRadiusButton]}
+                            onPress={() => {
+                              setNotificationRadius(radius);
+                              saveSettings({ notificationRadius: radius });
+                            }}>
+                            <Text style={[styles.radiusButtonText, notificationRadius === radius && styles.activeRadiusButtonText]}>
+                              {radius} {units}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </ScrollView>
+                    </View>
+                  </View>
+                </View>
+              ) : settingsTab === 'privacy' ? (
+                <View style={styles.settingsContent}>
+                  <Text style={styles.subSectionTitle}>Privacy & Security</Text>
+                  
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>Report sightings anonymously</Text>
+                    <Switch
+                      value={anonymousSightings}
+                      onValueChange={(value) => {
+                        if (value) {
+                          Alert.alert(
+                            'Ghost Mode Activated',
+                            'You are now in Ghost mode. You can continue to report sightings like normal without your display name being shared.',
+                            [{ text: 'OK' }]
+                          );
+                        }
+                        setAnonymousSightings(value);
+                        saveSettings({ anonymousSightings: value });
+                      }}
+                      trackColor={{ false: '#767577', true: '#81b0ff' }}
+                      thumbColor={anonymousSightings ? '#f5dd4b' : '#f4f3f4'}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.settingsContent}>
+                  <Text style={styles.subSectionTitle}>General & About</Text>
+                  
+                  <View style={styles.settingRow}>
+                    <Text style={styles.settingLabel}>App Version</Text>
+                    <Text style={styles.versionText}>1.0.0</Text>
+                  </View>
+                  
+                  <TouchableOpacity 
+                    style={styles.linkButton}
+                    onPress={() => Alert.alert('Coming Soon', 'Terms of Service will be available soon!')}>
+                    <Text style={styles.linkButtonText}>Terms of Service</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={styles.linkButton}
+                    onPress={() => Alert.alert('Coming Soon', 'Privacy Policy will be available soon!')}>
+                    <Text style={styles.linkButtonText}>Privacy Policy</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           ) : (
             <View style={styles.profileContainer}>
               <Text style={styles.sectionTitle}>Profile</Text>
@@ -533,7 +833,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   <Text style={styles.settingsTabText}>Profile Information</Text>
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.settingsTab}>
+                <TouchableOpacity 
+                  style={styles.settingsTab}
+                  onPress={() => setActiveTab('settings')}>
                   <Text style={styles.settingsTabText}>Settings</Text>
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
@@ -596,6 +898,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 activeTab === 'profile' && styles.activeNavButtonText,
               ]}>
               Profile
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.navButton,
+              activeTab === 'settings' && styles.activeNavButton,
+            ]}
+            onPress={() => setActiveTab('settings')}>
+            <Text
+              style={[
+                styles.navButtonText,
+                activeTab === 'settings' && styles.activeNavButtonText,
+              ]}>
+              Settings
             </Text>
           </TouchableOpacity>
         </View>
@@ -1024,8 +1340,8 @@ const styles = StyleSheet.create({
   },
   profileInfoTabText: {
     color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
   },
   activeProfileInfoTabText: {
     color: '#000',
@@ -1153,5 +1469,134 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Settings Styles
+  settingsContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  settingsTabs: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    padding: 4,
+  },
+  settingsTabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  activeSettingsTabButton: {
+    backgroundColor: '#fff',
+  },
+  settingsTabButtonText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  activeSettingsTabButtonText: {
+    color: '#000',
+  },
+  settingsContent: {
+    flex: 1,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  settingLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+    flex: 1,
+  },
+  subSettingLabel: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 14,
+    fontWeight: '500',
+    flex: 1,
+  },
+  unitsSelector: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  unitButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  activeUnitButton: {
+    backgroundColor: '#3182ce',
+  },
+  unitButtonText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  activeUnitButtonText: {
+    color: '#fff',
+  },
+  notificationSubSettings: {
+    marginLeft: 16,
+    marginTop: 8,
+  },
+  radiusSelector: {
+    flex: 1,
+    marginLeft: 16,
+  },
+  radiusButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    minWidth: 60,
+    alignItems: 'center',
+  },
+  activeRadiusButton: {
+    backgroundColor: '#3182ce',
+  },
+  radiusButtonText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  activeRadiusButtonText: {
+    color: '#fff',
+  },
+  versionText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 16,
+  },
+  linkButton: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    marginBottom: 12,
+    alignItems: 'center',
+  },
+  linkButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
