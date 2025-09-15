@@ -416,6 +416,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 <WildlifeMap
                   currentLocation={currentLocation}
                   onLocationUpdate={setCurrentLocation}
+                  showLegend={showLegend}
                 />
               </ErrorBoundary>
               {/* AdBanner temporarily removed */}
@@ -595,7 +596,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   style={[styles.settingsTabButton, settingsTab === 'preferences' && styles.activeSettingsTabButton]}
                   onPress={() => setSettingsTab('preferences')}>
                   <Text style={[styles.settingsTabButtonText, settingsTab === 'preferences' && styles.activeSettingsTabButtonText]}>
-                    App Preferences
+                    Preferences
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
@@ -686,7 +687,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   </View>
                 </View>
               ) : settingsTab === 'notifications' ? (
-                <View style={styles.settingsContent}>
+                <ScrollView style={styles.settingsContent} showsVerticalScrollIndicator={false}>
                   <Text style={styles.subSectionTitle}>Notification Settings</Text>
                   
                   {/* Master Toggle */}
@@ -769,7 +770,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                       </ScrollView>
                     </View>
                   </View>
-                </View>
+                </ScrollView>
               ) : settingsTab === 'privacy' ? (
                 <View style={styles.settingsContent}>
                   <Text style={styles.subSectionTitle}>Privacy & Security</Text>
@@ -993,20 +994,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               Profile
             </Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              activeTab === 'settings' && styles.activeNavButton,
-            ]}
-            onPress={() => setActiveTab('settings')}>
-            <Text
-              style={[
-                styles.navButtonText,
-                activeTab === 'settings' && styles.activeNavButtonText,
-              ]}>
-              Settings
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <AnimalSelectionModal
@@ -1061,6 +1048,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               <WildlifeMap
                 currentLocation={currentLocation}
                 onLocationUpdate={setCurrentLocation}
+                showLegend={showLegend}
               />
             </View>
           </SafeAreaView>
@@ -1592,8 +1580,8 @@ const styles = StyleSheet.create({
   },
   settingsTabButtonText: {
     color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 16,
+    fontWeight: '700',
     textAlign: 'center',
   },
   activeSettingsTabButtonText: {

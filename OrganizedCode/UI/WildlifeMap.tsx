@@ -15,9 +15,10 @@ interface Region {
 interface WildlifeMapProps {
   currentLocation: Location | null;
   onLocationUpdate?: (location: Location) => void;
+  showLegend?: boolean;
 }
 
-const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpdate}) => {
+const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpdate, showLegend = true}) => {
   const [hotspots, setHotspots] = useState<FirebaseHotspot[]>([]);
   const [mapRegion, setMapRegion] = useState<Region>({
     latitude: 37.78825,
@@ -157,23 +158,25 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
         </View>
       )}
 
-      <View style={styles.legend}>
-        <Text style={styles.legendTitle}>Deer Spotted</Text>
-        <View style={styles.legendRow}>
-          <View style={styles.legendDotWrapper}>
-            <View style={[styles.legendDotLarge, {backgroundColor: getHeatBorderColor('Low')}]} />
-            <Text style={styles.legendRowText}>Low Activity</Text>
-          </View>
-          <View style={styles.legendDotWrapper}>
-            <View style={[styles.legendDotLarge, {backgroundColor: getHeatBorderColor('Medium')}]} />
-            <Text style={styles.legendRowText}>Medium Activity</Text>
-          </View>
-          <View style={styles.legendDotWrapper}>
-            <View style={[styles.legendDotLarge, {backgroundColor: getHeatBorderColor('High')}]} />
-            <Text style={styles.legendRowText}>High Activity</Text>
+      {showLegend && (
+        <View style={styles.legend}>
+          <Text style={styles.legendTitle}>Deer Spotted</Text>
+          <View style={styles.legendRow}>
+            <View style={styles.legendDotWrapper}>
+              <View style={[styles.legendDotLarge, {backgroundColor: getHeatBorderColor('Low')}]} />
+              <Text style={styles.legendRowText}>Low Activity</Text>
+            </View>
+            <View style={styles.legendDotWrapper}>
+              <View style={[styles.legendDotLarge, {backgroundColor: getHeatBorderColor('Medium')}]} />
+              <Text style={styles.legendRowText}>Medium Activity</Text>
+            </View>
+            <View style={styles.legendDotWrapper}>
+              <View style={[styles.legendDotLarge, {backgroundColor: getHeatBorderColor('High')}]} />
+              <Text style={styles.legendRowText}>High Activity</Text>
+            </View>
           </View>
         </View>
-      </View>
+      )}
     </View>
   );
 };
@@ -188,8 +191,6 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     backgroundColor: '#08111d',
-    borderWidth: 2,
-    borderColor: 'rgba(0,150,255,0.4)'
   },
   overlayStatus: {
     position: 'absolute',
