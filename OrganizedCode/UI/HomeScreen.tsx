@@ -9,6 +9,7 @@ import {
   PermissionsAndroid,
   Modal,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import AnimalSelectionModal from './AnimalSelectionModal';
 import QuantitySelectionModal from './QuantitySelectionModal';
@@ -17,7 +18,7 @@ import SubscriptionScreen from './SubscriptionScreen';
 // import AdBanner from './AdBanner'; // Temporarily disabled
 import WildlifeMap from './WildlifeMap';
 import ErrorBoundary from './ErrorBoundary';
-import {AnimalType, Location} from '../CoreLogic/types';
+import {AnimalType, SightingReport, Location} from '../CoreLogic/types';
 import WildlifeReportsService, {
   AuthService,
 } from '../Storage/wildlifeReportsService';
@@ -36,13 +37,23 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [showQuantityUpdateModal, setShowQuantityUpdateModal] = useState(false);
   const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalType | null>(null);
-  const [activeTab, setActiveTab] = useState<'map' | 'profile'>('map');
+  const [recentSightings, setRecentSightings] = useState<SightingReport[]>([]);
+  const [activeTab, setActiveTab] = useState<'map' | 'sightings' | 'profile' | 'profile_info'>('map');
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [_locationError, setLocationError] = useState<string | null>(null);
   const [lastReportId, setLastReportId] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [servicesInitialized, setServicesInitialized] = useState(false);
   const [isFullscreenMap, setIsFullscreenMap] = useState(false);
+  const [profileInfoTab, setProfileInfoTab] = useState<'details' | 'data' | 'security'>('details');
+  const [userName, setUserName] = useState('Guest');
+  const [userEmail, setUserEmail] = useState('guest@example.com');
+  const [animalCounters, setAnimalCounters] = useState({
+    deer: 0,
+    bear: 0,
+    moose: 0,
+    smallMammals: 0,
+  });
 
   // Removed: useEffect for sightings tab
 
@@ -150,6 +161,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     requestLocationPermission();
   }, [requestLocationPermission]);
 
+  useEffect(() => {
+    if (activeTab === 'sightings') {
+      loadRecentSightings();
+    }
+  }, [activeTab]);
+
   const getCurrentLocation = () => {
     // Location services disabled - use manual location entry instead
     setLocationError('Location services not available - please enter location manually');
@@ -159,6 +176,30 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       longitude: -74.0060,
       accuracy: 0,
     });
+  };
+
+  const loadRecentSightings = async () => {
+    try {
+      const sightings = await WildlifeReportsService.getUserReports(20);
+      setRecentSightings(sightings);
+      
+      // Calculate animal counters
+      const counters = { deer: 0, bear: 0, moose: 0, smallMammals: 0 };
+      sightings.forEach(sighting => {
+        if (sighting.type === 'deer') {
+          counters.deer += sighting.quantity;
+        } else if (sighting.type === 'bear') {
+          counters.bear += sighting.quantity;
+        } else if (sighting.type === 'moose_elk') {
+          counters.moose += sighting.quantity;
+        } else if (['raccoon', 'squirrel', 'rabbit', 'other'].includes(sighting.type)) {
+          counters.smallMammals += sighting.quantity;
+        }
+      });
+      setAnimalCounters(counters);
+    } catch {
+      Alert.alert('Error', 'Failed to load recent sightings');
+    }
   };
 
   const handleReportPress = async () => {
@@ -190,6 +231,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           'Your wildlife sighting has been reported. You can update the details below.',
           [{text: 'OK'}],
         );
+
+        if (activeTab === 'sightings') {
+          await loadRecentSightings();
+        }
       } else {
         Alert.alert('Error', 'Failed to submit report. Please try again.');
       }
@@ -244,6 +289,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
             quantity > 1 ? 's' : ''
           } sighted!`,
         );
+
+        if (activeTab === 'sightings') {
+          await loadRecentSightings();
+        }
       } else {
         Alert.alert('Error', 'Failed to save sighting. Please try again.');
       }
@@ -307,6 +356,164 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               </ErrorBoundary>
               {/* AdBanner temporarily removed */}
             </View>
+          ) : activeTab === 'sightings' ? (
+            <View style={styles.sightingsContainer}>
+              <Text style={styles.sectionTitle}>Recent Sightings</Text>
+              {recentSightings.length > 0 ? (
+                <ScrollView style={styles.sightingsList}>
+                  {recentSightings.map((sighting, index) => (
+                    <View key={index} style={styles.sightingItem}>
+                      <Text style={styles.sightingText}>
+                        {sighting.type} - {sighting.quantity} reported
+                      </Text>
+                      <Text style={styles.sightingDate}>
+                        {new Date(sighting.timestamp).toLocaleDateString()}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              ) : (
+                <Text style={styles.noSightingsText}>
+                  No recent sightings found. Start reporting wildlife to see your history here!
+                </Text>
+              )}
+            </View>
+          ) : activeTab === 'profile_info' ? (
+            <View style={styles.profileInfoContainer}>
+              <View style={styles.profileInfoHeader}>
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => setActiveTab('profile')}>
+                  <Text style={styles.backButtonText}>‹ Back</Text>
+                </TouchableOpacity>
+                <Text style={styles.sectionTitle}>Profile Information</Text>
+              </View>
+
+              {/* Profile Info Sub-tabs */}
+              <View style={styles.profileInfoTabs}>
+                <TouchableOpacity 
+                  style={[styles.profileInfoTab, profileInfoTab === 'details' && styles.activeProfileInfoTab]}
+                  onPress={() => setProfileInfoTab('details')}>
+                  <Text style={[styles.profileInfoTabText, profileInfoTab === 'details' && styles.activeProfileInfoTabText]}>
+                    Profile Details
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.profileInfoTab, profileInfoTab === 'data' && styles.activeProfileInfoTab]}
+                  onPress={() => setProfileInfoTab('data')}>
+                  <Text style={[styles.profileInfoTabText, profileInfoTab === 'data' && styles.activeProfileInfoTabText]}>
+                    App Data
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.profileInfoTab, profileInfoTab === 'security' && styles.activeProfileInfoTab]}
+                  onPress={() => setProfileInfoTab('security')}>
+                  <Text style={[styles.profileInfoTabText, profileInfoTab === 'security' && styles.activeProfileInfoTabText]}>
+                    Account Security
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Profile Info Content */}
+              {profileInfoTab === 'details' ? (
+                <View style={styles.profileInfoContent}>
+                  <View style={styles.userInfoSection}>
+                    <Text style={styles.userInfoLabel}>Name:</Text>
+                    <Text style={styles.userInfoValue}>{userName}</Text>
+                  </View>
+                  <View style={styles.userInfoSection}>
+                    <Text style={styles.userInfoLabel}>Email:</Text>
+                    <Text style={styles.userInfoValue}>{userEmail}</Text>
+                  </View>
+                  
+                  {/* Status moved here */}
+                  <View style={styles.statusSection}>
+                    <Text style={styles.statusText}>
+                      Status: {isPro ? 'Pro User' : 'Free User'}
+                    </Text>
+                    {isPro ? (
+                      <Text style={styles.proBadge}>⭐ Pro</Text>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.upgradeButton}
+                        onPress={handleUpgradePress}>
+                        <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                      </TouchableOpacity>
+                    )}
+                    <TouchableOpacity
+                      style={styles.manageSubscriptionButton}
+                      onPress={() => Alert.alert('Coming Soon', 'Subscription management will be available soon!')}>
+                      <Text style={styles.manageSubscriptionButtonText}>Manage Subscription</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : profileInfoTab === 'data' ? (
+                <View style={styles.profileInfoContent}>
+                  <Text style={styles.subSectionTitle}>Animal Sightings</Text>
+                  <View style={styles.animalCountersTable}>
+                    <View style={styles.counterRow}>
+                      <Text style={styles.counterLabel}>Deer:</Text>
+                      <Text style={styles.counterValue}>{animalCounters.deer}</Text>
+                    </View>
+                    <View style={styles.counterRow}>
+                      <Text style={styles.counterLabel}>Bear:</Text>
+                      <Text style={styles.counterValue}>{animalCounters.bear}</Text>
+                    </View>
+                    <View style={styles.counterRow}>
+                      <Text style={styles.counterLabel}>Moose:</Text>
+                      <Text style={styles.counterValue}>{animalCounters.moose}</Text>
+                    </View>
+                    <View style={styles.counterRow}>
+                      <Text style={styles.counterLabel}>Small Mammals:</Text>
+                      <Text style={styles.counterValue}>{animalCounters.smallMammals}</Text>
+                    </View>
+                  </View>
+
+                  <Text style={styles.subSectionTitle}>Recent Reports</Text>
+                  <View style={styles.recentReportsList}>
+                    {recentSightings.slice(0, 3).map((sighting, index) => (
+                      <View key={index} style={styles.recentReportItem}>
+                        <Text style={styles.recentReportText}>
+                          {sighting.type} sighting - {Math.floor((Date.now() - sighting.timestamp) / (1000 * 60 * 60 * 24))} days ago
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.profileInfoContent}>
+                  <TouchableOpacity
+                    style={styles.securityButton}
+                    onPress={() => Alert.alert('Coming Soon', 'Password change functionality will be available soon!')}>
+                    <Text style={styles.securityButtonText}>Change Password</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.deleteAccountButton}
+                    onPress={() => {
+                      Alert.alert(
+                        'Delete Account',
+                        'Are you sure you want to delete your account? This action cannot be undone.',
+                        [
+                          {text: 'No, go back', style: 'cancel'},
+                          {text: 'Yes', style: 'destructive', onPress: () => {
+                            Alert.alert('Account Deleted', 'Your account has been deleted.');
+                            // In a real app, this would call an API to delete the account
+                          }},
+                        ]
+                      );
+                    }}>
+                    <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    style={styles.logoutButtonOrange}
+                    onPress={onLogout}>
+                    <Text style={styles.logoutButtonOrangeText}>Log Out</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
           ) : (
             <View style={styles.profileContainer}>
               <Text style={styles.sectionTitle}>Profile</Text>
@@ -320,7 +527,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
               {/* Settings Section */}
               <View style={styles.settingsSection}>
-                <TouchableOpacity style={styles.settingsTab}>
+                <TouchableOpacity 
+                  style={styles.settingsTab}
+                  onPress={() => setActiveTab('profile_info')}>
                   <Text style={styles.settingsTabText}>Profile Information</Text>
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
@@ -332,24 +541,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   <Text style={styles.settingsTabText}>Help</Text>
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
-                {/* Status at bottom of settings */}
-                <View style={styles.statusContainer}>
-                  <Text style={styles.statusText}>
-                    Status: {isPro ? 'Pro User' : 'Free User'}
-                  </Text>
-                  {isPro ? (
-                    <Text style={styles.proBadge}>⭐ Pro</Text>
-                  ) : (
-                    <TouchableOpacity
-                      style={styles.upgradeButton}
-                      onPress={handleUpgradePress}>
-                      <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
-                    </TouchableOpacity>
-                  )}
-                  <TouchableOpacity style={styles.logoutButtonSmall} onPress={onLogout}>
-                    <Text style={styles.logoutButtonTextSmall}>Log Out</Text>
-                  </TouchableOpacity>
-                </View>
+                {/* Status at bottom of settings - REMOVED */}
               </View>
             </View>
           )}
@@ -376,6 +568,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 activeTab === 'map' && styles.activeNavButtonText,
               ]}>
               Map
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.navButton,
+              activeTab === 'sightings' && styles.activeNavButton,
+            ]}
+            onPress={() => setActiveTab('sightings')}>
+            <Text
+              style={[
+                styles.navButtonText,
+                activeTab === 'sightings' && styles.activeNavButtonText,
+              ]}>
+              View Recent Sightings
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -570,43 +776,11 @@ const styles = StyleSheet.create({
   activeNavButtonText: {
     color: '#fff',
   },
-  sightingsContainer: {
-    flex: 1,
-    width: '100%',
-    padding: 16,
-  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: '600',
     color: '#fff',
     marginBottom: 16,
-  },
-  sightingsList: {
-    flex: 1,
-  },
-  sightingCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  sightingAnimal: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#fff',
-  },
-  sightingTime: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  noSightingsText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    textAlign: 'center',
-    marginTop: 32,
-    fontSize: 16,
   },
   profileContainer: {
     flex: 1,
@@ -779,5 +953,205 @@ const styles = StyleSheet.create({
     color: '#ef4444',
     fontWeight: '600',
     fontSize: 14,
+  },
+  sightingsContainer: {
+    flex: 1,
+    padding: 16,
+    alignItems: 'center',
+  },
+  sightingsList: {
+    width: '100%',
+    marginTop: 20,
+  },
+  sightingItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    width: '100%',
+  },
+  sightingText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  sightingDate: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 14,
+    marginTop: 4,
+  },
+  noSightingsText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    textAlign: 'center',
+    marginTop: 32,
+    fontSize: 16,
+  },
+  profileInfoContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  profileInfoHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  backButton: {
+    marginRight: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  profileInfoTabs: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    padding: 4,
+  },
+  profileInfoTab: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  activeProfileInfoTab: {
+    backgroundColor: '#fff',
+  },
+  profileInfoTabText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  activeProfileInfoTabText: {
+    color: '#000',
+  },
+  profileInfoContent: {
+    flex: 1,
+  },
+  userInfoSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  userInfoLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  userInfoValue: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+  },
+  statusSection: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  manageSubscriptionButton: {
+    backgroundColor: '#4a5568',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 12,
+  },
+  manageSubscriptionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  subSectionTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 16,
+    marginTop: 20,
+  },
+  animalCountersTable: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  counterRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  counterLabel: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  counterValue: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  recentReportsList: {
+    marginTop: 16,
+  },
+  recentReportItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  recentReportText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+  securityButton: {
+    backgroundColor: '#4a5568',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  securityButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteAccountButton: {
+    backgroundColor: '#dc2626',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  deleteAccountButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  logoutButtonOrange: {
+    backgroundColor: '#ea580c',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  logoutButtonOrangeText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
