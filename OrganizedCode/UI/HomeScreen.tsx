@@ -42,7 +42,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalType | null>(null);
   const [recentSightings, setRecentSightings] = useState<SightingReport[]>([]);
-  const [activeTab, setActiveTab] = useState<'map' | 'sightings' | 'profile' | 'profile_info' | 'settings'>('map');
+  const [activeTab, setActiveTab] = useState<'map' | 'sightings' | 'profile' | 'profile_info' | 'settings' | 'help'>('map');
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [_locationError, setLocationError] = useState<string | null>(null);
   const [lastReportId, setLastReportId] = useState<string | null>(null);
@@ -70,6 +70,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [appUpdateNotifications, setAppUpdateNotifications] = useState(true);
   const [notificationRadius, setNotificationRadius] = useState(5);
   const [anonymousSightings, setAnonymousSightings] = useState(false);
+
+  // Help state variables
+  const [helpTab, setHelpTab] = useState<'contact' | 'faq'>('contact');
 
   // Removed: useEffect for sightings tab
 
@@ -814,6 +817,94 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 </View>
               )}
             </View>
+          ) : activeTab === 'help' ? (
+            <View style={styles.helpContainer}>
+              <View style={styles.helpHeader}>
+                <TouchableOpacity 
+                  style={styles.backButton}
+                  onPress={() => setActiveTab('profile')}>
+                  <Text style={styles.backButtonText}>‹ Back</Text>
+                </TouchableOpacity>
+                <Text style={styles.sectionTitle}>Help & Support</Text>
+              </View>
+
+              {/* Help Sub-tabs */}
+              <View style={styles.helpTabs}>
+                <TouchableOpacity 
+                  style={[styles.helpTabButton, helpTab === 'contact' && styles.activeHelpTabButton]}
+                  onPress={() => setHelpTab('contact')}>
+                  <Text style={[styles.helpTabButtonText, helpTab === 'contact' && styles.activeHelpTabButtonText]}>
+                    Contact Us
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.helpTabButton, helpTab === 'faq' && styles.activeHelpTabButton]}
+                  onPress={() => setHelpTab('faq')}>
+                  <Text style={[styles.helpTabButtonText, helpTab === 'faq' && styles.activeHelpTabButtonText]}>
+                    FAQ
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Help Content */}
+              {helpTab === 'contact' ? (
+                <View style={styles.helpContent}>
+                  <Text style={styles.subSectionTitle}>Get in Touch</Text>
+                  
+                  <View style={styles.contactSection}>
+                    <Text style={styles.contactTitle}>Phone Support</Text>
+                    <TouchableOpacity 
+                      style={styles.contactButton}
+                      onPress={() => {
+                        // In a real app, this would initiate a phone call
+                        Alert.alert('Call Support', 'Calling 888-888-8888...', [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Call', onPress: () => Alert.alert('Success', 'Call initiated!') }
+                        ]);
+                      }}>
+                      <Text style={styles.contactButtonText}>📞 888-888-8888</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.contactSection}>
+                    <Text style={styles.contactTitle}>Email Support</Text>
+                    <TouchableOpacity 
+                      style={styles.contactButton}
+                      onPress={() => {
+                        // In a real app, this would open email client
+                        Alert.alert('Email Support', 'Opening email to ohnodeer@support.com...', [
+                          { text: 'Cancel', style: 'cancel' },
+                          { text: 'Send Email', onPress: () => Alert.alert('Success', 'Email client opened!') }
+                        ]);
+                      }}>
+                      <Text style={styles.contactButtonText}>✉️ ohnodeer@support.com</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.contactInfo}>
+                    <Text style={styles.contactInfoText}>
+                      Our support team is available Monday through Friday, 9 AM to 6 PM EST.
+                    </Text>
+                    <Text style={styles.contactInfoText}>
+                      For urgent wildlife emergencies, please contact your local authorities.
+                    </Text>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.helpContent}>
+                  <Text style={styles.subSectionTitle}>Frequently Asked Questions</Text>
+                  
+                  <View style={styles.faqPlaceholder}>
+                    <Text style={styles.faqPlaceholderText}>
+                      FAQ section coming soon!
+                    </Text>
+                    <Text style={styles.faqPlaceholderSubtext}>
+                      We're working on comprehensive answers to common questions about wildlife reporting and app features.
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
           ) : (
             <View style={styles.profileContainer}>
               <Text style={styles.sectionTitle}>Profile</Text>
@@ -839,7 +930,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   <Text style={styles.settingsTabText}>Settings</Text>
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.settingsTab}>
+                <TouchableOpacity 
+                  style={styles.settingsTab}
+                  onPress={() => setActiveTab('help')}>
                   <Text style={styles.settingsTabText}>Help</Text>
                   <Text style={styles.arrowText}>›</Text>
                 </TouchableOpacity>
@@ -1598,5 +1691,98 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+  },
+  // Help Styles
+  helpContainer: {
+    flex: 1,
+    padding: 16,
+  },
+  helpHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  helpTabs: {
+    flexDirection: 'row',
+    marginBottom: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    padding: 4,
+  },
+  helpTabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  activeHelpTabButton: {
+    backgroundColor: '#fff',
+  },
+  helpTabButtonText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  activeHelpTabButtonText: {
+    color: '#000',
+  },
+  helpContent: {
+    flex: 1,
+  },
+  contactSection: {
+    marginBottom: 24,
+  },
+  contactTitle: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  contactButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    alignItems: 'center',
+  },
+  contactButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  contactInfo: {
+    marginTop: 32,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 8,
+  },
+  contactInfoText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 8,
+  },
+  faqPlaceholder: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 40,
+  },
+  faqPlaceholderText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  faqPlaceholderSubtext: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
   },
 });
