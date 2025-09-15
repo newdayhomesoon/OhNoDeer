@@ -10,7 +10,6 @@ import {
   Modal,
   SafeAreaView,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import AnimalSelectionModal from './AnimalSelectionModal';
 import QuantitySelectionModal from './QuantitySelectionModal';
 import QuantityUpdateModal from './QuantityUpdateModal';
@@ -18,7 +17,7 @@ import SubscriptionScreen from './SubscriptionScreen';
 // import AdBanner from './AdBanner'; // Temporarily disabled
 import WildlifeMap from './WildlifeMap';
 import ErrorBoundary from './ErrorBoundary';
-import {AnimalType, SightingReport, Location} from '../CoreLogic/types';
+import {AnimalType, Location} from '../CoreLogic/types';
 import WildlifeReportsService, {
   AuthService,
 } from '../Storage/wildlifeReportsService';
@@ -26,7 +25,6 @@ import {backgroundService} from '../Storage/backgroundService';
 // import {voiceCommandService} from '../Storage/voiceCommandService'; // Temporarily disabled
 import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
 // import {adService} from '../Storage/adService'; // Temporarily disabled
-import { getCurrentUser } from '../Storage/firebase/service';
 
 type HomeScreenProps = {
   onLogout: () => void;
@@ -38,24 +36,15 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [showQuantityUpdateModal, setShowQuantityUpdateModal] = useState(false);
   const [showSubscriptionScreen, setShowSubscriptionScreen] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalType | null>(null);
-  const [recentSightings, setRecentSightings] = useState<SightingReport[]>([]);
-  const [activeTab, setActiveTab] = useState<'map' | 'sightings' | 'profile'>(
-    'map',
-  );
+  const [activeTab, setActiveTab] = useState<'map' | 'profile'>('map');
   const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
   const [_locationError, setLocationError] = useState<string | null>(null);
   const [lastReportId, setLastReportId] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [servicesInitialized, setServicesInitialized] = useState(false);
   const [isFullscreenMap, setIsFullscreenMap] = useState(false);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [userName, setUserName] = useState<string>('');
 
-  useEffect(() => {
-    if (activeTab === 'sightings') {
-      loadRecentSightings();
-    }
-  }, [activeTab]);
+  // Removed: useEffect for sightings tab
 
   useEffect(() => {
     // Defer service initialization slightly to isolate crashes unrelated to mount/render
@@ -65,24 +54,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    // Check if this is the user's first login
-    (async () => {
-      const hasSeenWelcome = await AsyncStorage.getItem('hasSeenWelcome');
-      if (!hasSeenWelcome) {
-        // Try to get user info
-        const user = getCurrentUser();
-        let name = user?.displayName || user?.email || 'New User';
-        setUserName(name);
-        setShowWelcomeModal(true);
-      }
-    })();
-  }, []);
-
-  const initializeServices = async () => {
+    const initializeServices = async () => {
     try {
       console.log('[Init] Starting service initialization...');
-
+      
       // Ad service temporarily disabled
       console.log('[Init] adService.initialize:skipped');
 
@@ -186,15 +161,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     });
   };
 
-  const loadRecentSightings = async () => {
-    try {
-      const sightings = await WildlifeReportsService.getUserReports(20);
-      setRecentSightings(sightings);
-    } catch {
-      Alert.alert('Error', 'Failed to load recent sightings');
-    }
-  };
-
   const handleReportPress = async () => {
     if (!currentLocation) {
       Alert.alert(
@@ -224,10 +190,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           'Your wildlife sighting has been reported. You can update the details below.',
           [{text: 'OK'}],
         );
-
-        if (activeTab === 'sightings') {
-          await loadRecentSightings();
-        }
       } else {
         Alert.alert('Error', 'Failed to submit report. Please try again.');
       }
@@ -276,10 +238,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       );
 
       if (reportId) {
-        if (activeTab === 'sightings') {
-          await loadRecentSightings();
-        }
-
         Alert.alert(
           'Success',
           `Reported ${quantity} ${animalType}${
@@ -309,11 +267,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   const handleUpgradePress = () => {
     setShowSubscriptionScreen(true);
-  };
-
-  const handleWelcomeContinue = async () => {
-    await AsyncStorage.setItem('hasSeenWelcome', 'true');
-    setShowWelcomeModal(false);
   };
 
   const formatDate = (timestamp: number) => {
@@ -354,52 +307,50 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               </ErrorBoundary>
               {/* AdBanner temporarily removed */}
             </View>
-          ) : activeTab === 'sightings' ? (
-            <View style={styles.sightingsContainer}>
-              <Text style={styles.sectionTitle}>Recent Sightings</Text>
-              {recentSightings.length > 0 ? (
-                <View style={styles.sightingsList}>
-                  {recentSightings.map(sighting => (
-                    <View key={sighting.id} style={styles.sightingCard}>
-                      <Text style={styles.sightingAnimal}>
-                        {sighting.quantity} {sighting.type}
-                        {sighting.quantity > 1 ? 's' : ''}
-                      </Text>
-                      <Text style={styles.sightingTime}>
-                        {formatDate(sighting.timestamp)}
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              ) : (
-                <Text style={styles.noSightingsText}>
-                  No recent sightings to display
-                </Text>
-              )}
-            </View>
           ) : (
             <View style={styles.profileContainer}>
               <Text style={styles.sectionTitle}>Profile</Text>
 
-              {/* Pro Status */}
-              <View style={styles.proStatusContainer}>
-                <Text style={styles.proStatusText}>
-                  Status: {isPro ? 'Pro User' : 'Free User'}
-                </Text>
-                {isPro ? (
-                  <Text style={styles.proBadge}>⭐ Pro</Text>
-                ) : (
-                  <TouchableOpacity
-                    style={styles.upgradeButton}
-                    onPress={handleUpgradePress}>
-                    <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-
-              <TouchableOpacity style={styles.logoutButton} onPress={onLogout}>
-                <Text style={styles.logoutButtonText}>Log Out</Text>
+              {/* Profile Photo Placeholder */}
+              <TouchableOpacity style={styles.profilePhotoContainer}>
+                <View style={styles.profilePhotoPlaceholder}>
+                  <Text style={styles.profilePhotoText}>Add Photo</Text>
+                </View>
               </TouchableOpacity>
+
+              {/* Settings Section */}
+              <View style={styles.settingsSection}>
+                <TouchableOpacity style={styles.settingsTab}>
+                  <Text style={styles.settingsTabText}>Profile Information</Text>
+                  <Text style={styles.arrowText}>›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.settingsTab}>
+                  <Text style={styles.settingsTabText}>Settings</Text>
+                  <Text style={styles.arrowText}>›</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.settingsTab}>
+                  <Text style={styles.settingsTabText}>Help</Text>
+                  <Text style={styles.arrowText}>›</Text>
+                </TouchableOpacity>
+                {/* Status at bottom of settings */}
+                <View style={styles.statusContainer}>
+                  <Text style={styles.statusText}>
+                    Status: {isPro ? 'Pro User' : 'Free User'}
+                  </Text>
+                  {isPro ? (
+                    <Text style={styles.proBadge}>⭐ Pro</Text>
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.upgradeButton}
+                      onPress={handleUpgradePress}>
+                      <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                    </TouchableOpacity>
+                  )}
+                  <TouchableOpacity style={styles.logoutButtonSmall} onPress={onLogout}>
+                    <Text style={styles.logoutButtonTextSmall}>Log Out</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
             </View>
           )}
         </View>
@@ -409,16 +360,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
             style={[styles.actionButton, styles.primaryButton]}
             onPress={handleReportPress}>
             <Text style={styles.primaryButtonText}>Report Sighting</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.secondaryButton]}
-            onPress={() =>
-              setActiveTab(prev => (prev === 'sightings' ? 'map' : 'sightings'))
-            }>
-            <Text style={styles.secondaryButtonText}>
-              {activeTab === 'sightings' ? 'Back to Map' : 'View Sightings'}
-            </Text>
           </TouchableOpacity>
         </View>
 
@@ -435,20 +376,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 activeTab === 'map' && styles.activeNavButtonText,
               ]}>
               Map
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.navButton,
-              activeTab === 'sightings' && styles.activeNavButton,
-            ]}
-            onPress={() => setActiveTab('sightings')}>
-            <Text
-              style={[
-                styles.navButtonText,
-                activeTab === 'sightings' && styles.activeNavButtonText,
-              ]}>
-              Sightings
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -522,31 +449,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               />
             </View>
           </SafeAreaView>
-        </Modal>
-
-        <Modal
-          visible={showWelcomeModal}
-          animationType="fade"
-          transparent
-          onRequestClose={handleWelcomeContinue}
-        >
-          <View style={styles.welcomeModalOverlay}>
-            <View style={styles.welcomeModalContent}>
-              <Text style={styles.welcomeTitle}>Welcome, {userName}!</Text>
-              <Text style={styles.welcomeText}>
-                This app is built to provide irreplaceable safety on and off the road!{"\n"}
-                To make the best use of this community driven platform, be sure to log any wildlife sightings with our buttons or through Google/Siri commands!
-              </Text>
-              <TouchableOpacity onPress={() => {/* TODO: link to info page */}}>
-                <Text style={styles.welcomeLink}>
-                  Read more information about how we keep our roadways safe
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.welcomeContinueButton} onPress={handleWelcomeContinue}>
-                <Text style={styles.welcomeContinueButtonText}>Continue</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         </Modal>
       </View>
     </View>
@@ -730,7 +632,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   upgradeButton: {
-    backgroundColor: '#3182ce',
+    backgroundColor: '#FFD700',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 24,
@@ -805,55 +707,77 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 16,
   },
-  welcomeModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+  profilePhotoContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  profilePhotoPlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
   },
-  welcomeModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 28,
-    width: '100%',
-    maxWidth: 380,
-    alignItems: 'center',
-  },
-  welcomeTitle: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#1a365d',
-    marginBottom: 16,
+  profilePhotoText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
     textAlign: 'center',
   },
-  welcomeText: {
-    fontSize: 16,
-    color: '#4a5568',
-    textAlign: 'center',
-    marginBottom: 18,
-    lineHeight: 22,
-  },
-  welcomeLink: {
-    color: '#3182ce',
-    fontSize: 15,
-    textDecorationLine: 'underline',
+  settingsSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     marginBottom: 24,
-    textAlign: 'center',
-  },
-  welcomeContinueButton: {
-    backgroundColor: '#3182ce',
-    borderRadius: 30,
-    paddingVertical: 16,
-    paddingHorizontal: 40,
-    alignItems: 'center',
     width: '100%',
-    maxWidth: 260,
+    overflow: 'hidden',
   },
-  welcomeContinueButtonText: {
+  settingsTab: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  settingsTabText: {
     color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  arrowText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  statusContainer: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  statusText: {
+    fontSize: 16,
+    color: '#fff',
+    marginBottom: 8,
+  },
+  logoutButtonSmall: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.4)',
+    marginTop: 12,
+  },
+  logoutButtonTextSmall: {
+    color: '#ef4444',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });
