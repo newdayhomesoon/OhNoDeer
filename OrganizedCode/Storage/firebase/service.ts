@@ -3,6 +3,8 @@ import {
   getAuth,
   signInAnonymously,
   onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
   User,
 } from 'firebase/auth';
 import {
@@ -89,7 +91,14 @@ function requireApp(): ReturnType<typeof initializeApp> {
   return app;
 }
 
-export const auth = (() => getAuth(requireApp()))();
+export const auth = (() => {
+  const authInstance = getAuth(requireApp());
+  // Set persistence to LOCAL to ensure users stay logged in across app restarts
+  setPersistence(authInstance, browserLocalPersistence).catch((error) => {
+    console.warn('Failed to set auth persistence:', error);
+  });
+  return authInstance;
+})();
 export const db = (() => {
   const instance = getFirestore(requireApp());
   // Improve reliability in React Native / emulator or restricted network environments

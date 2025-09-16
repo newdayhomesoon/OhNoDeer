@@ -227,6 +227,11 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
             setUserName(user.displayName || user.email?.split('@')[0] || 'User');
             setUserEmail(user.email || 'No email');
           }
+
+          // Load sightings after user is authenticated
+          if (activeTab === 'sightings') {
+            await loadRecentSightings();
+          }
         } catch (error) {
           console.warn('Failed to load user profile:', error);
           // Fallback to Firebase Auth user data
@@ -237,6 +242,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         // Reset to default values when logged out
         setUserName('Guest');
         setUserEmail('guest@example.com');
+        setRecentSightings([]); // Clear sightings when logged out
       }
     };
 
@@ -244,7 +250,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     const unsubscribe = onAuthStateChange(loadUserProfile);
     
     return unsubscribe;
-  }, []);
+  }, [activeTab]);
 
   // Save settings to AsyncStorage
   const saveSettings = async (newSettings: any) => {
@@ -280,6 +286,13 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   const loadRecentSightings = async () => {
     try {
+      const user = getCurrentUser();
+      if (!user) {
+        console.log('No authenticated user, skipping sightings load');
+        setRecentSightings([]);
+        return;
+      }
+
       const sightings = await WildlifeReportsService.getUserReports(20);
       setRecentSightings(sightings);
       
@@ -297,8 +310,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         }
       });
       setAnimalCounters(counters);
-    } catch {
-      Alert.alert('Error', 'Failed to load recent sightings');
+    } catch (error) {
+      console.error('Error loading recent sightings:', error);
+      setRecentSightings([]);
+      Alert.alert('Error', 'Failed to load recent sightings. Please check your connection and try again.');
     }
   };
 
@@ -332,9 +347,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           [{text: 'OK'}],
         );
 
-        if (activeTab === 'sightings') {
-          await loadRecentSightings();
-        }
+        // Always reload sightings after submission
+        await loadRecentSightings();
       } else {
         Alert.alert('Error', 'Failed to submit report. Please try again.');
       }
@@ -390,9 +404,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           } sighted!`,
         );
 
-        if (activeTab === 'sightings') {
-          await loadRecentSightings();
-        }
+        // Always reload sightings after submission
+        await loadRecentSightings();
       } else {
         Alert.alert('Error', 'Failed to save sighting. Please try again.');
       }

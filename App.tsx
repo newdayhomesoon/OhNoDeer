@@ -18,25 +18,6 @@ function App(): JSX.Element {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
-    // Check for stored authentication state first
-    const checkStoredAuthState = async () => {
-      try {
-        const storedAuthState = await AsyncStorage.getItem('authState');
-        if (storedAuthState === 'loggedIn') {
-          // Check if user is still authenticated with Firebase
-          const currentUser = AuthService.getCurrentUser();
-          if (currentUser) {
-            setLoggedIn(true);
-          } else {
-            // Clear stored state if user is not authenticated
-            await AsyncStorage.removeItem('authState');
-          }
-        }
-      } catch (error) {
-        console.warn('Error checking stored auth state:', error);
-      }
-    };
-
     // Listen to authentication state changes
     const unsubscribe = AuthService.onAuthStateChange(async (user) => {
       const isLoggedIn = !!user;
@@ -58,7 +39,26 @@ function App(): JSX.Element {
       }
     });
 
-    // Check stored state first, then set up listener
+    // Check stored state after a brief delay to allow Firebase to initialize
+    const checkStoredAuthState = async () => {
+      try {
+        // Give Firebase a moment to initialize
+        setTimeout(async () => {
+          const storedAuthState = await AsyncStorage.getItem('authState');
+          if (storedAuthState === 'loggedIn') {
+            // Double-check with Firebase after initialization
+            const currentUser = AuthService.getCurrentUser();
+            if (!currentUser && !initializing) {
+              // Clear stored state if user is not authenticated
+              await AsyncStorage.removeItem('authState');
+            }
+          }
+        }, 1000); // Wait 1 second for Firebase to initialize
+      } catch (error) {
+        console.warn('Error checking stored auth state:', error);
+      }
+    };
+
     checkStoredAuthState();
 
     return unsubscribe;
