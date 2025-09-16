@@ -4,6 +4,7 @@ import MapView, {Marker, Circle, PROVIDER_GOOGLE} from 'react-native-maps';
 import {featureFlags} from '../CoreLogic/featureFlags';
 import {checkNearbyHotspots, FirebaseHotspot} from '../Storage/firebase/service';
 import {Location} from '../CoreLogic/types';
+import { theme } from '../../src/app-theme';
 
 interface Region {
   latitude: number;
@@ -213,26 +214,28 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(120,0,0,0.4)'
   },
   overlayText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600'
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
+    fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   legend: {
     position: 'absolute',
     top: 10,
     right: 10,
     backgroundColor: 'rgba(0,0,0,0.8)',
-    padding: 10,
+    padding: theme.spacing.m,
     borderRadius: 10,
     maxWidth: 200,
   },
   legendTitle: {
-    color: '#fff',
-    fontSize: 12,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.caption,
     fontWeight: '700',
-    marginBottom: 6,
+    marginBottom: theme.spacing.s,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: theme.fontFamily.lato,
   },
   legendRow: {
     flexDirection: 'column',
@@ -241,18 +244,19 @@ const styles = StyleSheet.create({
   legendDotWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: theme.spacing.s,
   },
   legendDotLarge: {
     width: 14,
     height: 14,
     borderRadius: 7,
-    marginRight: 8,
+    marginRight: theme.spacing.s,
   },
   legendRowText: {
-    color: '#fff',
-    fontSize: 11,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.caption,
     fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
   },
 });
 

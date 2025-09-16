@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import {AnimalCategories, AnimalType} from '../CoreLogic/types';
+import { theme } from '../../src/app-theme';
 
 interface AnimalSelectionModalProps {
   visible: boolean;
@@ -100,12 +101,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: theme.spacing.m,
   },
   modalContent: {
-    backgroundColor: 'rgba(10, 25, 41, 0.95)',
+    backgroundColor: theme.colors.primaryBackground,
     borderRadius: 25,
-    padding: 30,
+    padding: theme.spacing.xl,
     width: '95%',
     maxWidth: 450,
     maxHeight: '80%',
@@ -114,11 +115,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   modalTitle: {
-    fontSize: 26,
+    fontSize: theme.fontSize.h1,
     fontWeight: '800',
-    marginBottom: 30,
-    color: '#fff',
+    marginBottom: theme.spacing.xl,
+    color: theme.colors.textPrimary,
     textAlign: 'center',
+    fontFamily: theme.fontFamily.lato,
   },
   animalsScrollContainer: {
     width: '100%',
@@ -126,60 +128,63 @@ const styles = StyleSheet.create({
   },
   animalsContainer: {
     width: '100%',
-    paddingBottom: 10,
+    paddingBottom: theme.spacing.s,
   },
   animalGroup: {
-    marginBottom: 20,
+    marginBottom: theme.spacing.l,
   },
   categoryLabel: {
-    fontSize: 18,
+    fontSize: theme.fontSize.h3,
     fontWeight: '700',
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginBottom: 10,
-    paddingLeft: 8,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.s,
+    paddingLeft: theme.spacing.s,
+    fontFamily: theme.fontFamily.lato,
   },
   animalRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    marginBottom: 10,
+    marginBottom: theme.spacing.s,
     justifyContent: 'center',
   },
   animalButton: {
     width: 110,
     height: 120,
     borderRadius: 15,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 12,
-    margin: 6,
+    padding: theme.spacing.m,
+    margin: theme.spacing.s,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   animalLabel: {
-    marginTop: 6,
-    fontSize: 14,
+    marginTop: theme.spacing.s,
+    fontSize: theme.fontSize.caption,
     textAlign: 'center',
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   animalEmoji: {
     fontSize: 40,
     textAlign: 'center',
-    marginBottom: 5,
+    marginBottom: theme.spacing.s,
   },
   cancelButton: {
-    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-    padding: 14,
+    backgroundColor: theme.colors.error,
+    padding: theme.spacing.m,
     borderRadius: 12,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: theme.spacing.s,
     width: '100%',
   },
   cancelButtonText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: theme.fontSize.body,
+    fontFamily: theme.fontFamily.openSans,
   },
 });
 

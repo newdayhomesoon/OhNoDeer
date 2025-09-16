@@ -1,6 +1,7 @@
 import React from 'react';
 import {View, StyleSheet} from 'react-native';
 import {adService} from '../Storage/adService';
+import { theme } from '../../src/app-theme';
 
 interface AdBannerProps {
   isPro: boolean;
@@ -23,7 +24,7 @@ const AdBanner: React.FC<AdBannerProps> = ({isPro}) => {
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    marginVertical: 8,
+    marginVertical: theme.spacing.s,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 8,
     overflow: 'hidden',

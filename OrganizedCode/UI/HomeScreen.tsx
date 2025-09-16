@@ -30,6 +30,7 @@ import {backgroundService} from '../Storage/backgroundService';
 // import {voiceCommandService} from '../Storage/voiceCommandService'; // Temporarily disabled
 import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
 // import {adService} from '../Storage/adService'; // Temporarily disabled
+import { theme } from '../../src/app-theme';
 
 type HomeScreenProps = {
   onLogout: () => void;
@@ -1129,7 +1130,7 @@ const styles = StyleSheet.create({
     flex: 1,
     width: '100%',
     height: '100%',
-    backgroundColor: '#0a1929', // Dark blue background
+    backgroundColor: theme.colors.primaryBackground,
   },
   overlay: {
     flex: 1,
@@ -1142,17 +1143,19 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   companyName: {
-    fontSize: 28,
+    fontSize: theme.fontSize.h1,
     fontWeight: '800',
-    color: '#fff',
+    color: theme.colors.textPrimary,
     textAlign: 'center',
     marginBottom: 8,
+    fontFamily: theme.fontFamily.lato,
   },
   motto: {
-    fontSize: 15,
-    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
     marginBottom: 16,
+    fontFamily: theme.fontFamily.openSans,
   },
   mapContainer: {
     flex: 1,
@@ -1173,15 +1176,17 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   mapPlaceholderText: {
-    fontSize: 20,
+    fontSize: theme.fontSize.h3,
     fontWeight: '600',
-    color: '#fff',
+    color: theme.colors.textPrimary,
     marginBottom: 8,
+    fontFamily: theme.fontFamily.lato,
   },
   mapPlaceholderSubtext: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
+    fontFamily: theme.fontFamily.openSans,
   },
   actionButtons: {
     flexDirection: 'row',
@@ -1198,7 +1203,16 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   primaryButton: {
-    backgroundColor: '#3182ce',
+    backgroundColor: theme.colors.accent,
+    position: 'absolute',
+    bottom: theme.spacing.l,
+    left: theme.spacing.m,
+    right: theme.spacing.m,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   secondaryButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -1206,18 +1220,20 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   primaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   secondaryButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   navBar: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: theme.colors.primaryBackground,
     borderRadius: 30,
     padding: 8,
     marginBottom: 16,
@@ -1229,21 +1245,23 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   navButtonText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   activeNavButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   activeNavButtonText: {
-    color: '#fff',
+    color: theme.colors.accent,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: theme.fontSize.h2,
     fontWeight: '600',
-    color: '#fff',
+    color: theme.colors.textPrimary,
     marginBottom: 16,
+    fontFamily: theme.fontFamily.lato,
   },
   profileContainer: {
     flex: 1,
@@ -1259,14 +1277,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   proStatusText: {
-    fontSize: 16,
-    color: '#fff',
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textPrimary,
     marginBottom: 8,
+    fontFamily: theme.fontFamily.openSans,
   },
   proBadge: {
-    fontSize: 18,
+    fontSize: theme.fontSize.h3,
     color: '#fbbf24',
     fontWeight: 'bold',
+    fontFamily: theme.fontFamily.lato,
   },
   upgradeButton: {
     backgroundColor: '#FFD700',
@@ -1276,8 +1296,9 @@ const styles = StyleSheet.create({
   },
   upgradeButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   mapWithAdsContainer: {
     flex: 1,
@@ -1295,9 +1316,10 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   fullscreenButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   fullscreenModalContainer: {
     flex: 1,
@@ -1316,9 +1338,10 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   fullscreenCloseButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '700',
+    fontFamily: theme.fontFamily.openSans,
   },
   modalOverlay: {
     position: 'absolute',
@@ -1342,7 +1365,8 @@ const styles = StyleSheet.create({
   logoutButtonText: {
     color: '#ef4444',
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: theme.fontSize.body,
+    fontFamily: theme.fontFamily.openSans,
   },
   profilePhotoContainer: {
     marginTop: 20,
@@ -1360,12 +1384,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profilePhotoText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
     textAlign: 'center',
+    fontFamily: theme.fontFamily.openSans,
   },
   settingsSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
@@ -1383,14 +1408,16 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   settingsTabText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
   },
   arrowText: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 20,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.h3,
     fontWeight: 'bold',
+    fontFamily: theme.fontFamily.openSans,
   },
   statusContainer: {
     paddingVertical: 16,
@@ -1399,9 +1426,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   statusText: {
-    fontSize: 16,
-    color: '#fff',
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textPrimary,
     marginBottom: 8,
+    fontFamily: theme.fontFamily.openSans,
   },
   logoutButtonSmall: {
     backgroundColor: 'rgba(239, 68, 68, 0.2)',
@@ -1415,7 +1443,8 @@ const styles = StyleSheet.create({
   logoutButtonTextSmall: {
     color: '#ef4444',
     fontWeight: '600',
-    fontSize: 14,
+    fontSize: theme.fontSize.caption,
+    fontFamily: theme.fontFamily.openSans,
   },
   sightingsContainer: {
     flex: 1,
@@ -1427,27 +1456,31 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   sightingItem: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     width: '100%',
   },
   sightingText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
   },
   sightingDate: {
-    color: 'rgba(255, 255, 255, 0.6)',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
     marginTop: 4,
+    fontFamily: theme.fontFamily.openSans,
   },
   noSightingsText: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: theme.colors.textSecondary,
     textAlign: 'center',
     marginTop: 32,
-    fontSize: 16,
+    fontSize: theme.fontSize.body,
+    padding: theme.spacing.m,
+    fontFamily: theme.fontFamily.openSans,
   },
   profileInfoContainer: {
     flex: 1,
@@ -1464,14 +1497,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   backButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   profileInfoTabs: {
     flexDirection: 'row',
     marginBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     borderRadius: 8,
     padding: 4,
   },
@@ -1483,15 +1517,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeProfileInfoTab: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.textPrimary,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
   },
   profileInfoTabText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 16,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   activeProfileInfoTabText: {
-    color: '#000',
+    color: theme.colors.primaryBackground,
+    fontFamily: theme.fontFamily.openSans,
   },
   profileInfoContent: {
     flex: 1,
@@ -1507,18 +1548,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   userInfoLabel: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
   },
   userInfoValue: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 16,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.body,
+    fontFamily: theme.fontFamily.openSans,
   },
   statusSection: {
     marginTop: 20,
     padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     borderRadius: 12,
     alignItems: 'center',
   },
@@ -1530,19 +1573,21 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   manageSubscriptionButtonText: {
-    color: '#fff',
-    fontSize: 14,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.caption,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   subSectionTitle: {
-    color: '#fff',
-    fontSize: 18,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.h3,
     fontWeight: '600',
     marginBottom: 16,
     marginTop: 20,
+    fontFamily: theme.fontFamily.lato,
   },
   animalCountersTable: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
@@ -1557,14 +1602,16 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   counterLabel: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
   },
   counterValue: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   recentReportsList: {
     marginTop: 16,
@@ -1576,8 +1623,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   recentReportText: {
-    color: '#fff',
-    fontSize: 14,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.caption,
+    fontFamily: theme.fontFamily.openSans,
   },
   securityButton: {
     backgroundColor: '#4a5568',
@@ -1588,12 +1636,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   securityButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   deleteAccountButton: {
-    backgroundColor: '#dc2626',
+    backgroundColor: theme.colors.error,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -1601,21 +1650,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   deleteAccountButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   logoutButtonOrange: {
-    backgroundColor: '#ea580c',
+    backgroundColor: theme.colors.warning,
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
   },
   logoutButtonOrangeText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   // Settings Styles
   settingsContainer: {
@@ -1630,7 +1681,7 @@ const styles = StyleSheet.create({
   settingsTabs: {
     flexDirection: 'row',
     marginBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     borderRadius: 8,
     padding: 4,
   },
@@ -1642,16 +1693,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeSettingsTabButton: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.textPrimary,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
   },
   settingsTabButtonText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 16,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.body,
     fontWeight: '700',
     textAlign: 'center',
+    fontFamily: theme.fontFamily.openSans,
   },
   activeSettingsTabButtonText: {
-    color: '#000',
+    color: theme.colors.primaryBackground,
+    fontFamily: theme.fontFamily.openSans,
   },
   settingsContent: {
     flex: 1,
@@ -1667,16 +1725,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   settingLabel: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '500',
     flex: 1,
+    fontFamily: theme.fontFamily.openSans,
   },
   subSettingLabel: {
-    color: 'rgba(255, 255, 255, 0.9)',
-    fontSize: 14,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.caption,
     fontWeight: '500',
     flex: 1,
+    fontFamily: theme.fontFamily.openSans,
   },
   unitsSelector: {
     flexDirection: 'row',
@@ -1691,15 +1751,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeUnitButton: {
-    backgroundColor: '#3182ce',
+    backgroundColor: theme.colors.accent,
   },
   unitButtonText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   activeUnitButtonText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fontFamily.openSans,
   },
   notificationSubSettings: {
     marginLeft: 16,
@@ -1719,19 +1781,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeRadiusButton: {
-    backgroundColor: '#3182ce',
+    backgroundColor: theme.colors.accent,
   },
   radiusButtonText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 12,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   activeRadiusButtonText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fontFamily.openSans,
   },
   versionText: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 16,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.body,
+    fontFamily: theme.fontFamily.openSans,
   },
   linkButton: {
     paddingVertical: 12,
@@ -1742,9 +1807,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   linkButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
   },
   // Help Styles
   helpContainer: {
@@ -1759,7 +1825,7 @@ const styles = StyleSheet.create({
   helpTabs: {
     flexDirection: 'row',
     marginBottom: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     borderRadius: 8,
     padding: 4,
   },
@@ -1771,16 +1837,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   activeHelpTabButton: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.textPrimary,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
   },
   helpTabButtonText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 16,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
     textAlign: 'center',
+    fontFamily: theme.fontFamily.openSans,
   },
   activeHelpTabButtonText: {
-    color: '#000',
+    color: theme.colors.primaryBackground,
+    fontFamily: theme.fontFamily.openSans,
   },
   helpContent: {
     flex: 1,
@@ -1789,13 +1862,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   contactTitle: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
     marginBottom: 12,
+    fontFamily: theme.fontFamily.openSans,
   },
   contactButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: theme.colors.secondaryBackground,
     paddingVertical: 16,
     paddingHorizontal: 20,
     borderRadius: 12,
@@ -1804,9 +1878,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   contactButtonText: {
-    color: '#fff',
-    fontSize: 16,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
     fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
   },
   contactInfo: {
     marginTop: 32,
@@ -1815,10 +1890,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   contactInfoText: {
-    color: 'rgba(255, 255, 255, 0.8)',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
     lineHeight: 20,
     marginBottom: 8,
+    fontFamily: theme.fontFamily.openSans,
   },
   faqPlaceholder: {
     flex: 1,
@@ -1827,16 +1903,18 @@ const styles = StyleSheet.create({
     padding: 40,
   },
   faqPlaceholderText: {
-    color: '#fff',
-    fontSize: 18,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.h3,
     fontWeight: '600',
     marginBottom: 12,
     textAlign: 'center',
+    fontFamily: theme.fontFamily.lato,
   },
   faqPlaceholderSubtext: {
-    color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.body,
     textAlign: 'center',
     lineHeight: 20,
+    fontFamily: theme.fontFamily.openSans,
   },
 });

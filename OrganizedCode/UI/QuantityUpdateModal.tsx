@@ -7,6 +7,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
+import { theme } from '../../src/app-theme';
 
 interface QuantityUpdateModalProps {
   visible: boolean;
@@ -91,55 +92,58 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: theme.spacing.m,
   },
   modal: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.primaryBackground,
     borderRadius: 16,
-    padding: 24,
+    padding: theme.spacing.xl,
     width: '100%',
     maxWidth: 320,
     alignItems: 'center',
   },
   title: {
-    fontSize: 20,
+    fontSize: theme.fontSize.h2,
     fontWeight: '700',
-    color: '#1a365d',
-    marginBottom: 8,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.s,
+    fontFamily: theme.fontFamily.lato,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#4a5568',
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textSecondary,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: theme.spacing.xl,
+    fontFamily: theme.fontFamily.openSans,
   },
   quantityContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 24,
+    marginBottom: theme.spacing.xl,
   },
   quantityButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: '#f7fafc',
+    backgroundColor: theme.colors.secondaryBackground,
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: theme.spacing.s,
     borderWidth: 2,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   selectedQuantity: {
-    backgroundColor: '#3182ce',
-    borderColor: '#3182ce',
+    backgroundColor: theme.colors.accent,
+    borderColor: theme.colors.accent,
   },
   quantityText: {
-    fontSize: 18,
+    fontSize: theme.fontSize.body,
     fontWeight: '600',
-    color: '#4a5568',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fontFamily.openSans,
   },
   selectedQuantityText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
   },
   buttonContainer: {
     flexDirection: 'row',
@@ -148,26 +152,28 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.m,
     borderRadius: 8,
     alignItems: 'center',
-    marginHorizontal: 6,
+    marginHorizontal: theme.spacing.s,
   },
   skipButton: {
-    backgroundColor: '#f7fafc',
+    backgroundColor: theme.colors.secondaryBackground,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   confirmButton: {
-    backgroundColor: '#3182ce',
+    backgroundColor: theme.colors.accent,
   },
   skipButtonText: {
-    color: '#4a5568',
+    color: theme.colors.textSecondary,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   confirmButtonText: {
-    color: '#fff',
+    color: theme.colors.textPrimary,
     fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
 });
 
