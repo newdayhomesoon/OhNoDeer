@@ -210,6 +210,42 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     loadSettings();
   }, []);
 
+  // Load user profile when authentication state changes
+  useEffect(() => {
+    const loadUserProfile = async (user: any) => {
+      if (user) {
+        try {
+          // Load user profile from Firestore
+          const profile = await WildlifeReportsService.getUserProfile(user.uid);
+          
+          if (profile) {
+            // Update user info with actual profile data
+            setUserName(user.displayName || user.email?.split('@')[0] || 'User');
+            setUserEmail(user.email || profile.email || 'No email');
+          } else {
+            // Fallback to Firebase Auth user data
+            setUserName(user.displayName || user.email?.split('@')[0] || 'User');
+            setUserEmail(user.email || 'No email');
+          }
+        } catch (error) {
+          console.warn('Failed to load user profile:', error);
+          // Fallback to Firebase Auth user data
+          setUserName(user.displayName || user.email?.split('@')[0] || 'User');
+          setUserEmail(user.email || 'No email');
+        }
+      } else {
+        // Reset to default values when logged out
+        setUserName('Guest');
+        setUserEmail('guest@example.com');
+      }
+    };
+
+    // Listen for authentication state changes
+    const unsubscribe = onAuthStateChange(loadUserProfile);
+    
+    return unsubscribe;
+  }, []);
+
   // Save settings to AsyncStorage
   const saveSettings = async (newSettings: any) => {
     try {
@@ -376,6 +412,23 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const handleSkipQuantityUpdate = () => {
     setShowQuantityUpdateModal(false);
     setLastReportId(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Clear stored authentication state
+      await AsyncStorage.removeItem('authState');
+      
+      // Sign out from Firebase
+      await auth.signOut();
+      
+      // Call the parent logout handler
+      onLogout();
+    } catch (error) {
+      console.warn('Error during logout:', error);
+      // Still call logout even if there's an error
+      onLogout();
+    }
   };
 
   const handleUpgradePress = () => {
@@ -573,7 +626,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   
                   <TouchableOpacity
                     style={styles.logoutButtonOrange}
-                    onPress={onLogout}>
+                    onPress={handleLogout}>
                     <Text style={styles.logoutButtonOrangeText}>Log Out</Text>
                   </TouchableOpacity>
                 </View>

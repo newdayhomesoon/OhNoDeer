@@ -7,6 +7,7 @@
 
 import React, {useState, useEffect} from 'react';
 import {View, Text} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginScreen from './OrganizedCode/UI/LoginScreen';
 import HomeScreen from './OrganizedCode/UI/HomeScreen';
 import ErrorBoundary from './OrganizedCode/UI/ErrorBoundary';
@@ -17,13 +18,48 @@ function App(): JSX.Element {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
+    // Check for stored authentication state first
+    const checkStoredAuthState = async () => {
+      try {
+        const storedAuthState = await AsyncStorage.getItem('authState');
+        if (storedAuthState === 'loggedIn') {
+          // Check if user is still authenticated with Firebase
+          const currentUser = AuthService.getCurrentUser();
+          if (currentUser) {
+            setLoggedIn(true);
+          } else {
+            // Clear stored state if user is not authenticated
+            await AsyncStorage.removeItem('authState');
+          }
+        }
+      } catch (error) {
+        console.warn('Error checking stored auth state:', error);
+      }
+    };
+
     // Listen to authentication state changes
-    const unsubscribe = AuthService.onAuthStateChange(user => {
-      setLoggedIn(!!user);
+    const unsubscribe = AuthService.onAuthStateChange(async (user) => {
+      const isLoggedIn = !!user;
+      setLoggedIn(isLoggedIn);
+      
+      // Store authentication state
+      try {
+        if (isLoggedIn) {
+          await AsyncStorage.setItem('authState', 'loggedIn');
+        } else {
+          await AsyncStorage.removeItem('authState');
+        }
+      } catch (error) {
+        console.warn('Error storing auth state:', error);
+      }
+      
       if (initializing) {
         setInitializing(false);
       }
     });
+
+    // Check stored state first, then set up listener
+    checkStoredAuthState();
 
     return unsubscribe;
   }, [initializing]);
