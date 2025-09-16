@@ -56,8 +56,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [animalCounters, setAnimalCounters] = useState({
     deer: 0,
     bear: 0,
-    moose: 0,
-    smallMammals: 0,
+    moose_elk: 0,
+    raccoon: 0,
+    rabbit: 0,
+    small_mammals: 0,
   });
   
   // Settings state variables
@@ -298,16 +300,17 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       setRecentSightings(sightings);
       
       // Calculate animal counters
-      const counters = { deer: 0, bear: 0, moose: 0, smallMammals: 0 };
+      const counters = { 
+        deer: 0, 
+        bear: 0, 
+        moose_elk: 0, 
+        raccoon: 0, 
+        rabbit: 0, 
+        small_mammals: 0 
+      };
       sightings.forEach(sighting => {
-        if (sighting.type === 'deer') {
-          counters.deer += sighting.quantity;
-        } else if (sighting.type === 'bear') {
-          counters.bear += sighting.quantity;
-        } else if (sighting.type === 'moose_elk') {
-          counters.moose += sighting.quantity;
-        } else if (['raccoon', 'squirrel', 'rabbit', 'other'].includes(sighting.type)) {
-          counters.smallMammals += sighting.quantity;
+        if (counters.hasOwnProperty(sighting.type)) {
+          counters[sighting.type] += sighting.quantity;
         }
       });
       setAnimalCounters(counters);
@@ -337,16 +340,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
       if (reportId) {
         setLastReportId(reportId);
-        // Show quantity update modal after successful submission
-        setTimeout(() => {
-          setShowQuantityUpdateModal(true);
-        }, 1000);
-
-        Alert.alert(
-          'Report Submitted!',
-          'Your wildlife sighting has been reported. You can update the details below.',
-          [{text: 'OK'}],
-        );
+        // Show quantity update modal immediately (no delay needed since success message is in modal)
+        setShowQuantityUpdateModal(true);
 
         // Always reload sightings after submission
         await loadRecentSightings();
@@ -362,11 +357,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     setSelectedAnimal(animal);
     setShowAnimalModal(false);
 
-    if (animal === 'other') {
-      await handleSaveSighting(animal, 1);
-    } else {
-      setShowQuantityModal(true);
-    }
+    setShowQuantityModal(true);
   };
 
   const handleQuantitySelect = async (quantity: number) => {
@@ -415,12 +406,52 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     }
   };
 
-  const handleQuantityUpdate = async (quantity: number) => {
-    // Note: In a full implementation, you'd update the existing report
-    // For now, we'll just close the modal
+  const handleQuantityUpdate = async (selectedAnimalType: AnimalType, quantity: number) => {
+    // Convert individual small mammals to the grouped category for reporting
+    const animalType = (selectedAnimalType === 'raccoon' || selectedAnimalType === 'rabbit') 
+      ? 'small_mammals' 
+      : selectedAnimalType;
+    
+    // Update the existing report with the new animal type and quantity
+    if (!currentLocation) {
+      Alert.alert(
+        'Location Error',
+        'Unable to get your current location. Please ensure location services are enabled and try again.',
+      );
+      return;
+    }
+
+    try {
+      // Submit an updated report with the selected animal type and quantity
+      const reportId = await WildlifeReportsService.submitReport(
+        animalType,
+        currentLocation,
+        quantity,
+      );
+
+      if (reportId) {
+        Alert.alert(
+          'Report Updated!',
+          `Successfully updated to ${quantity} ${animalType === 'small_mammals' ? 'Small Mammal' : animalType}${quantity > 1 ? 's' : ''}.`,
+        );
+
+        // Update animal counters for the profile data
+        setAnimalCounters(prev => ({
+          ...prev,
+          [animalType]: prev[animalType] + quantity,
+        }));
+
+        // Always reload sightings after submission
+        await loadRecentSightings();
+      } else {
+        Alert.alert('Error', 'Failed to update report. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update report. Please try again.');
+    }
+
     setShowQuantityUpdateModal(false);
     setLastReportId(null);
-    Alert.alert('Updated!', `Quantity updated to ${quantity}`);
   };
 
   const handleSkipQuantityUpdate = () => {
@@ -593,11 +624,11 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                     </View>
                     <View style={styles.counterRow}>
                       <Text style={styles.counterLabel}>Moose:</Text>
-                      <Text style={styles.counterValue}>{animalCounters.moose}</Text>
+                      <Text style={styles.counterValue}>{animalCounters.moose_elk}</Text>
                     </View>
                     <View style={styles.counterRow}>
                       <Text style={styles.counterLabel}>Small Mammals:</Text>
-                      <Text style={styles.counterValue}>{animalCounters.smallMammals}</Text>
+                      <Text style={styles.counterValue}>{animalCounters.small_mammals}</Text>
                     </View>
                   </View>
 

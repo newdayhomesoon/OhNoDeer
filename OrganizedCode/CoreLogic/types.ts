@@ -3,9 +3,8 @@ export type AnimalType =
   | 'bear'
   | 'moose_elk'
   | 'raccoon'
-  | 'squirrel'
   | 'rabbit'
-  | 'other';
+  | 'small_mammals';
 
 export interface Location {
   latitude: number;
@@ -34,8 +33,7 @@ export type AnimalCategory =
   | 'deer'
   | 'bear'
   | 'moose_elk'
-  | 'small_mammals'
-  | 'other';
+  | 'small_mammals';
 
 export const AnimalCategories: Record<
   AnimalCategory,
@@ -46,9 +44,8 @@ export const AnimalCategories: Record<
   moose_elk: {label: 'Moose/Elk', types: ['moose_elk']},
   small_mammals: {
     label: 'Small Mammals',
-    types: ['raccoon', 'squirrel', 'rabbit'],
+    types: ['raccoon', 'rabbit', 'small_mammals'],
   },
-  other: {label: 'Other', types: ['other']},
 };
 
 // New types for advanced features

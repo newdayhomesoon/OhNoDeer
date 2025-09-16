@@ -41,10 +41,10 @@ const AnimalSelectionModal: React.FC<AnimalSelectionModalProps> = ({
         return '🫎';
       case 'raccoon':
         return '🦝';
-      case 'squirrel':
-        return '🐿️';
       case 'rabbit':
-        return '🐇';
+        return '�';
+      case 'small_mammals':
+        return '�️';
       default:
         return '❓';
     }
@@ -55,9 +55,8 @@ const AnimalSelectionModal: React.FC<AnimalSelectionModalProps> = ({
       bear: 'Bear',
       moose_elk: 'Moose/Elk',
       raccoon: 'Raccoon',
-      squirrel: 'Squirrel',
       rabbit: 'Rabbit',
-      other: 'Other',
+      small_mammals: 'Small Mammals',
     }[animal];
   };
 

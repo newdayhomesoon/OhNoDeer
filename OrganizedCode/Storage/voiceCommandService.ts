@@ -121,7 +121,7 @@ class VoiceCommandService {
     } else if (lowerCommand.includes('raccoon')) {
       animalType = 'raccoon';
     } else if (lowerCommand.includes('squirrel')) {
-      animalType = 'squirrel';
+      animalType = 'small_mammals';
     } else if (lowerCommand.includes('rabbit')) {
       animalType = 'rabbit';
     }

@@ -29,10 +29,10 @@ const getAnimalEmoji = (animal: AnimalType): string => {
       return '🫎';
     case 'raccoon':
       return '🦝';
-    case 'squirrel':
-      return '🐿️';
     case 'rabbit':
-      return '🐇';
+      return '�';
+    case 'small_mammals':
+      return '�️';
     default:
       return '❓';
   }
@@ -45,17 +45,24 @@ const QuantitySelectionModal: React.FC<QuantitySelectionModalProps> = ({
   onClose,
   onBack,
 }) => {
-  const animalLabel = {
-    deer: 'Deer',
-    bear: 'Bear',
-    moose_elk: 'Moose/Elk',
-    raccoon: 'Raccoon',
-    squirrel: 'Squirrel',
-    rabbit: 'Rabbit',
-    other: 'Animal',
-  }[animalType];
-
-  return (
+const animalLabel = (animal: AnimalType): string => {
+  switch (animal) {
+    case 'deer':
+      return 'Deer';
+    case 'bear':
+      return 'Bear';
+    case 'moose_elk':
+      return 'Moose/Elk';
+    case 'raccoon':
+      return 'Raccoon';
+    case 'rabbit':
+      return 'Rabbit';
+    case 'small_mammals':
+      return 'Small Mammals';
+    default:
+      return 'Unknown';
+  }
+};  return (
     <Modal
       animationType="fade"
       transparent={true}
@@ -64,8 +71,7 @@ const QuantitySelectionModal: React.FC<QuantitySelectionModalProps> = ({
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>
-            How many {animalLabel.toLowerCase()}
-            {animalType !== 'other' ? 's' : ''} did you see?
+            How many {animalLabel(animalType).toLowerCase()}s did you see?
           </Text>
 
           <View style={styles.quantityContainer}>
@@ -96,7 +102,7 @@ const QuantitySelectionModal: React.FC<QuantitySelectionModalProps> = ({
                     ))}
                 </View>
                 <Text style={styles.quantityText}>
-                  {quantity} {quantity === 1 ? animalLabel : `${animalLabel}s`}
+                  {quantity} {quantity === 1 ? animalLabel(animalType) : `${animalLabel(animalType)}s`}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -106,8 +112,7 @@ const QuantitySelectionModal: React.FC<QuantitySelectionModalProps> = ({
               onPress={() => onSelect(4)}>
               <Text style={[styles.quantityText, styles.manyText]}>4+</Text>
               <Text style={styles.quantitySubtext}>
-                Many {animalLabel.toLowerCase()}
-                {animalType !== 'other' ? 's' : ''}
+                Many {animalLabel(animalType).toLowerCase()}s
               </Text>
             </TouchableOpacity>
           </View>
