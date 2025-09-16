@@ -1100,16 +1100,15 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           onClose={() => setShowAnimalModal(false)}
         />
 
-        {selectedAnimal &&
-          (selectedAnimal === 'deer' || selectedAnimal === 'bear') && (
-            <QuantitySelectionModal
-              visible={showQuantityModal}
-              animalType={selectedAnimal}
-              onSelect={handleQuantitySelect}
-              onClose={() => setShowQuantityModal(false)}
-              onBack={handleBackToAnimals}
-            />
-          )}
+        {selectedAnimal && showQuantityModal && (
+          <QuantitySelectionModal
+            visible={showQuantityModal}
+            animalType={selectedAnimal}
+            onSelect={handleQuantitySelect}
+            onClose={() => setShowQuantityModal(false)}
+            onBack={handleBackToAnimals}
+          />
+        )}
 
         <QuantityUpdateModal
           visible={showQuantityUpdateModal}
