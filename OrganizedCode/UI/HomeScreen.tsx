@@ -393,16 +393,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const loadRecentSightings = async () => {
     try {
       const user = getCurrentUser();
-      console.log('Loading sightings for user:', user?.uid);
+      console.log('Loading sightings for user:', user?.uid, user?.email);
       if (!user) {
         console.log('No authenticated user, skipping sightings load');
         setRecentSightings([]);
         return;
       }
 
+      console.log('Fetching user reports from Firebase...');
       const sightings = await WildlifeReportsService.getUserReports(20);
-      console.log('Loaded sightings:', sightings.length, sightings);
+      console.log('Raw sightings data from Firebase:', sightings);
+      console.log('Number of sightings loaded:', sightings.length);
+      
       setRecentSightings(sightings);
+      console.log('Recent sightings state updated:', sightings);
       
       // Calculate animal counters
       const counters = { 
@@ -414,10 +418,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         small_mammals: 0 
       };
       sightings.forEach(sighting => {
+        console.log('Processing sighting:', sighting.type, sighting.quantity);
         if (counters.hasOwnProperty(sighting.type)) {
           counters[sighting.type] += sighting.quantity;
         }
       });
+      console.log('Calculated animal counters:', counters);
       setAnimalCounters(counters);
     } catch (error) {
       console.error('Error loading recent sightings:', error);
@@ -556,7 +562,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     const locationData: LocationData = {
       latitude: location.latitude,
       longitude: location.longitude,
-      accuracy: location.accuracy,
+      accuracy: location.accuracy ?? 0, // Provide default value if undefined
       timestamp: Date.now(),
     };
     setCurrentLocation(locationData);
@@ -598,7 +604,17 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
             </View>
           ) : activeTab === 'sightings' ? (
             <View style={styles.sightingsContainer}>
-              <Text style={styles.sectionTitle}>Recent Sightings</Text>
+              <View style={styles.sightingsHeader}>
+                <Text style={styles.sectionTitle}>Recent Sightings</Text>
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={() => {
+                    console.log('Manual refresh triggered');
+                    loadRecentSightings();
+                  }}>
+                  <Text style={styles.refreshButtonText}>🔄 Refresh</Text>
+                </TouchableOpacity>
+              </View>
               {recentSightings.length > 0 ? (
                 <ScrollView style={styles.sightingsList}>
                   {recentSightings.map((sighting, index) => (
@@ -613,9 +629,25 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   ))}
                 </ScrollView>
               ) : (
-                <Text style={styles.noSightingsText}>
-                  No recent sightings found. Start reporting wildlife to see your history here!
-                </Text>
+                <View style={styles.noSightingsContainer}>
+                  <Text style={styles.noSightingsText}>
+                    No recent sightings found. Start reporting wildlife to see your history here!
+                  </Text>
+                  <View style={styles.debugInfo}>
+                    <Text style={styles.debugText}>
+                      Debug Info:
+                    </Text>
+                    <Text style={styles.debugText}>
+                      User: {getCurrentUser()?.uid ? 'Authenticated' : 'Not authenticated'}
+                    </Text>
+                    <Text style={styles.debugText}>
+                      User ID: {getCurrentUser()?.uid || 'None'}
+                    </Text>
+                    <Text style={styles.debugText}>
+                      Sightings loaded: {recentSightings.length}
+                    </Text>
+                  </View>
+                </View>
               )}
             </View>
           ) : activeTab === 'profile_info' ? (
@@ -1562,6 +1594,25 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
   },
+  sightingsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 16,
+  },
+  refreshButton: {
+    backgroundColor: theme.colors.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 20,
+  },
+  refreshButtonText: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.caption,
+    fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
+  },
   sightingsList: {
     width: '100%',
     marginTop: 20,
@@ -1592,6 +1643,25 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.body,
     padding: theme.spacing.m,
     fontFamily: theme.fontFamily.openSans,
+  },
+  noSightingsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  debugInfo: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'flex-start',
+  },
+  debugText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
+    fontFamily: theme.fontFamily.openSans,
+    marginBottom: 4,
   },
   profileInfoContainer: {
     flex: 1,

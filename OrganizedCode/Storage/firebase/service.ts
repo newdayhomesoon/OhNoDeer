@@ -205,7 +205,7 @@ export const getUserReports = async (
   userId: string,
 ): Promise<WildlifeReport[]> => {
   try {
-    console.log('getUserReports Firebase - Querying for userId:', userId);
+    console.log('Firebase.getUserReports - Querying for userId:', userId);
     const q = query(
       collection(db, 'wildlife_reports'),
       where('userId', '==', userId),
@@ -213,13 +213,25 @@ export const getUserReports = async (
       limit(50),
     );
 
+    console.log('Firebase.getUserReports - Executing query...');
     const querySnapshot = await getDocs(q);
-    console.log('getUserReports Firebase - Query snapshot size:', querySnapshot.size);
-    const reports = querySnapshot.docs.map((doc: any) => doc.data() as WildlifeReport);
-    console.log('getUserReports Firebase - Reports data:', reports);
+    console.log('Firebase.getUserReports - Query completed. Snapshot size:', querySnapshot.size);
+    
+    if (querySnapshot.empty) {
+      console.log('Firebase.getUserReports - No documents found for user:', userId);
+      return [];
+    }
+    
+    const reports = querySnapshot.docs.map((doc: any) => {
+      const data = doc.data() as WildlifeReport;
+      console.log('Firebase.getUserReports - Document ID:', doc.id, 'Data:', data);
+      return data;
+    });
+    
+    console.log('Firebase.getUserReports - Total reports found:', reports.length);
     return reports;
   } catch (error) {
-    console.error('Error getting user reports:', error);
+    console.error('Firebase.getUserReports - Error getting user reports:', error);
     return [];
   }
 };

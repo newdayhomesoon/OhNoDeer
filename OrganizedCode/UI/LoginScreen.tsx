@@ -14,6 +14,7 @@ import {
 
 // Font loading for Lugrasimo
 // Removed expo-font import; using fontFamily style only
+import { MaterialIcons } from '@expo/vector-icons';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '../Storage/firebase/credentials';
 import {appleAuth} from '@invertase/react-native-apple-authentication';
@@ -240,13 +241,20 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
 
   return (
     <View style={styles.background}>
+      {/* Future background image container - add Image component here later */}
+      <View style={styles.backgroundImageContainer}>
+        {/* Background image will be added here */}
+      </View>
+
+      {/* Semi-transparent overlay for text readability */}
+      <View style={styles.backgroundOverlay} />
+
       <View style={styles.overlay}>
         {/* Header: Oh, No Deer at very top, motto just below */}
         <View style={styles.headerSectionTight}>
           <Text style={styles.companyNameLugrasimo}>Oh, No Deer</Text>
           <Text style={styles.mottoTight}>
-            Preventing wildlife collisions with a real time, live-alert,
-            community driven platform
+            Real-time wildlife alerts. Drive safer.
           </Text>
         </View>
 
@@ -255,8 +263,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
 
         {/* Tagline and title just above buttons */}
         <View style={styles.bottomTextSection}>
-          <Text style={styles.taglineSmall}>Protect the wildlife <Text style={styles.taglineSmall}>Secure your safety</Text></Text>
-          <Text style={styles.titleLugrasimo}>Join the movement!</Text>
+          <Text style={styles.titleLugrasimo}>Join the Movement</Text>
         </View>
 
         {/* Button cluster at the bottom */}
@@ -265,18 +272,21 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             style={[styles.button, styles.googleButton]}
             onPress={() => throttle(handleGoogleLogin)}
             disabled={loading}>
+            <MaterialIcons name="account-circle" size={24} color="#fff" />
             <Text style={[styles.buttonText, styles.googleButtonText]}>Continue with Google</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.appleButton]}
             onPress={() => throttle(handleAppleLogin)}
             disabled={loading}>
+            <MaterialIcons name="phone-iphone" size={24} color="#fff" />
             <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.emailButton]}
             onPress={() => throttle(openEmailModal)}
             disabled={loading}>
+            <MaterialIcons name="email" size={24} color={theme.colors.accent} />
             <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.guestButton} onPress={() => throttle(handleGuestLogin)}>
@@ -407,6 +417,22 @@ const styles = StyleSheet.create({
     height: '100%',
     backgroundColor: theme.colors.primaryBackground,
   },
+  backgroundImageContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    // Future: Add Image component here with resizeMode: 'cover'
+  },
+  backgroundOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(43, 45, 58, 0.7)', // Semi-transparent overlay
+  },
   overlay: {
     flex: 1,
     backgroundColor: 'rgba(10, 25, 41, 0.85)',
@@ -414,18 +440,18 @@ const styles = StyleSheet.create({
     paddingTop: Platform.select({ ios: 0, android: 0, default: 0 }),
   },
   headerSectionTight: {
-    marginTop: Platform.select({ ios: 10, android: 10, default: 10 }),
+    marginTop: Platform.select({ ios: theme.spacing.l, android: theme.spacing.l, default: theme.spacing.l }),
     alignItems: 'center',
-    paddingHorizontal: 8,
-    marginBottom: 4,
+    paddingHorizontal: theme.spacing.s,
+    marginBottom: theme.spacing.s,
   },
   companyNameLugrasimo: {
     fontSize: theme.fontSize.h1,
     color: theme.colors.textPrimary,
     textAlign: 'center',
     fontFamily: theme.fontFamily.lato,
-    marginTop: Platform.select({ ios: 10, android: 10, default: 10 }),
-    marginBottom: 2,
+    marginTop: Platform.select({ ios: theme.spacing.l, android: theme.spacing.l, default: theme.spacing.l }),
+    marginBottom: theme.spacing.s,
     letterSpacing: 1.5,
   },
   mottoTight: {
@@ -433,8 +459,8 @@ const styles = StyleSheet.create({
     color: theme.colors.textSecondary,
     textAlign: 'center',
     lineHeight: 18,
-    paddingHorizontal: 10,
-    marginBottom: 8,
+    paddingHorizontal: theme.spacing.m,
+    marginBottom: theme.spacing.l,
     fontFamily: theme.fontFamily.openSans,
   },
   formSectionWrapperTight: {
@@ -460,53 +486,55 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     textAlign: 'center',
     fontFamily: theme.fontFamily.lato,
-    marginBottom: 0,
+    marginBottom: theme.spacing.s,
     letterSpacing: 1.2,
   },
   bottomTextSection: {
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: theme.spacing.l,
   },
   bottomButtonSection: {
     alignItems: 'center',
-    paddingBottom: Platform.select({ ios: 24, android: 16, default: 16 }),
+    paddingBottom: Platform.select({ ios: theme.spacing.xl, android: theme.spacing.l, default: theme.spacing.l }),
     width: '100%',
+    gap: theme.spacing.m,
   },
   guestButton: {
-    marginTop: 8,
-    marginBottom: 0,
+    marginTop: theme.spacing.s,
+    marginBottom: theme.spacing.s,
     alignItems: 'center',
     width: '100%',
     maxWidth: 300,
     backgroundColor: 'transparent',
-    paddingVertical: 12,
+    paddingVertical: theme.spacing.m,
   },
   button: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 30,
-    marginVertical: 8,
+    paddingVertical: theme.spacing.l,
+    paddingHorizontal: theme.spacing.l,
+    borderRadius: theme.spacing.s,
     alignItems: 'center',
     width: '100%',
     maxWidth: 300,
     flexDirection: 'row',
     justifyContent: 'center',
+    gap: theme.spacing.s,
   },
   googleButton: {
-    backgroundColor: '#4285F4',
+    backgroundColor: theme.colors.accent,
   },
   appleButton: {
     backgroundColor: '#000',
   },
   emailButton: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
   },
   buttonText: {
     color: '#1a365d',
     fontSize: theme.fontSize.body,
     fontWeight: '600',
-    marginLeft: 12,
     fontFamily: theme.fontFamily.openSans,
   },
   googleButtonText: {
@@ -516,7 +544,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   emailButtonText: {
-    color: '#1a365d',
+    color: theme.colors.accent,
   },
   guestLink: {
     position: 'absolute',

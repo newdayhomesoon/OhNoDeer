@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {View, StyleSheet, Alert, Text} from 'react-native';
+import React, {useEffect, useState, useRef} from 'react';
+import {View, StyleSheet, Alert, Text, Animated} from 'react-native';
 import MapView, {Marker, Circle, PROVIDER_GOOGLE} from 'react-native-maps';
 import {featureFlags} from '../CoreLogic/featureFlags';
 import {checkNearbyHotspots, FirebaseHotspot} from '../Storage/firebase/service';
@@ -18,6 +18,74 @@ interface WildlifeMapProps {
   onLocationUpdate?: (location: Location) => void;
   showLegend?: boolean;
 }
+
+const AnimatedUserLocation: React.FC<{location: Location}> = ({location}) => {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(0.8)).current;
+
+  useEffect(() => {
+    const pulseAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.5,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    const opacityAnimation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacityAnim, {
+          toValue: 0.3,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0.8,
+          duration: 1500,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulseAnimation.start();
+    opacityAnimation.start();
+
+    return () => {
+      pulseAnimation.stop();
+      opacityAnimation.stop();
+    };
+  }, [pulseAnim, opacityAnim]);
+
+  return (
+    <Marker
+      coordinate={{
+        latitude: location.latitude,
+        longitude: location.longitude,
+      }}
+      anchor={{x: 0.5, y: 0.5}}
+    >
+      <View style={styles.userLocationContainer}>
+        <Animated.View
+          style={[
+            styles.userLocationPulse,
+            {
+              transform: [{scale: pulseAnim}],
+              opacity: opacityAnim,
+            },
+          ]}
+        />
+        <View style={styles.userLocationCore} />
+      </View>
+    </Marker>
+  );
+};
 
 const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpdate, showLegend = true}) => {
   const [hotspots, setHotspots] = useState<FirebaseHotspot[]>([]);
@@ -93,7 +161,7 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         region={mapRegion}
-        showsUserLocation={featureFlags.ENABLE_USER_LOCATION}
+        showsUserLocation={false}
         showsMyLocationButton={featureFlags.ENABLE_USER_LOCATION}
         onMapReady={() => {
           console.log('[Map] onMapReady');
@@ -111,6 +179,10 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
             }
           }
         }}>
+        {currentLocation && featureFlags.ENABLE_USER_LOCATION && (
+          <AnimatedUserLocation location={currentLocation} />
+        )}
+
         {hotspots.map((hotspot, index) => (
           <Circle
             key={`${hotspot.gridId}_${index}`}
@@ -257,6 +329,27 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.caption,
     fontWeight: '500',
     fontFamily: theme.fontFamily.openSans,
+  },
+  userLocationContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  userLocationPulse: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.colors.accent,
+    borderWidth: 2,
+    borderColor: 'rgba(92, 124, 158, 0.5)',
+  },
+  userLocationCore: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: theme.colors.accent,
+    borderWidth: 3,
+    borderColor: theme.colors.textPrimary,
   },
 });
 
