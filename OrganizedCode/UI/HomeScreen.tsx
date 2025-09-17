@@ -30,6 +30,7 @@ import {backgroundService} from '../Storage/backgroundService';
 // import {voiceCommandService} from '../Storage/voiceCommandService'; // Temporarily disabled
 import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
 // import {adService} from '../Storage/adService'; // Temporarily disabled
+import {locationService, LocationData, LocationError} from '../Storage/locationService';
 import { theme } from '../../src/app-theme';
 
 type HomeScreenProps = {
@@ -44,8 +45,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [selectedAnimal, setSelectedAnimal] = useState<AnimalType | null>(null);
   const [recentSightings, setRecentSightings] = useState<SightingReport[]>([]);
   const [activeTab, setActiveTab] = useState<'map' | 'sightings' | 'profile' | 'profile_info' | 'settings' | 'help'>('map');
-  const [currentLocation, setCurrentLocation] = useState<Location | null>(null);
-  const [_locationError, setLocationError] = useState<string | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
+  const [locationError, setLocationError] = useState<LocationError | null>(null);
+  const [locationServiceInitialized, setLocationServiceInitialized] = useState(false);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
   const [lastReportId, setLastReportId] = useState<string | null>(null);
   const [isPro, setIsPro] = useState(false);
   const [servicesInitialized, setServicesInitialized] = useState(false);
@@ -90,7 +93,40 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     const initializeServices = async () => {
     try {
       console.log('[Init] Starting service initialization...');
-      
+
+      // Initialize location service first
+      console.log('[Init] locationService.initialize:start');
+      const locationInitialized = await locationService.initialize();
+      if (locationInitialized) {
+        console.log('[Init] locationService.initialize:success');
+        setLocationServiceInitialized(true);
+
+        // Try to get initial location
+        try {
+          const initialLocation = await locationService.getCurrentLocation();
+          setCurrentLocation(initialLocation);
+          console.log('[Init] Initial location obtained:', initialLocation);
+        } catch (locationErr) {
+          console.warn('[Init] Could not get initial location:', locationErr);
+          // Try cached location
+          const cachedLocation = await locationService.loadLocationFromCache();
+          if (cachedLocation) {
+            setCurrentLocation(cachedLocation);
+            console.log('[Init] Using cached location:', cachedLocation);
+          } else {
+            // Use fallback location
+            const fallbackLocation = locationService.getFallbackLocation();
+            setCurrentLocation(fallbackLocation);
+            console.log('[Init] Using fallback location:', fallbackLocation);
+          }
+        }
+      } else {
+        console.warn('[Init] Location service initialization failed');
+        // Use fallback location
+        const fallbackLocation = locationService.getFallbackLocation();
+        setCurrentLocation(fallbackLocation);
+      }
+
       // Ad service temporarily disabled
       console.log('[Init] adService.initialize:skipped');
 
@@ -155,18 +191,66 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   const requestLocationPermission = useCallback(async () => {
     try {
-      // For web, we'll use navigator.geolocation
-      // For React Native, this would use PermissionsAndroid or react-native-permissions
-      getCurrentLocation();
+      console.log('Requesting location permission...');
+      setIsRequestingLocation(true);
+
+      const hasPermission = await locationService.checkPermissions();
+      if (!hasPermission) {
+        const granted = await locationService.requestPermissions();
+        if (!granted) {
+          Alert.alert(
+            'Location Permission Required',
+            'This app needs location access to report wildlife sightings. Please enable location permissions in your device settings.',
+            [{ text: 'OK' }]
+          );
+          setLocationError({
+            code: 1,
+            message: 'Location permission denied',
+            type: 'PERMISSION_DENIED',
+          });
+          return;
+        }
+      }
+
+      // Try to get current location
+      try {
+        const location = await locationService.getCurrentLocation();
+        setCurrentLocation(location);
+        setLocationError(null);
+        console.log('Location permission granted and location obtained:', location);
+      } catch (locationErr) {
+        console.error('Error getting location after permission granted:', locationErr);
+        setLocationError(locationErr as LocationError);
+
+        // Try cached location
+        const cachedLocation = await locationService.loadLocationFromCache();
+        if (cachedLocation) {
+          setCurrentLocation(cachedLocation);
+          console.log('Using cached location:', cachedLocation);
+        } else {
+          // Use fallback
+          const fallbackLocation = locationService.getFallbackLocation();
+          setCurrentLocation(fallbackLocation);
+          console.log('Using fallback location:', fallbackLocation);
+        }
+      }
     } catch (error) {
       console.error('Error requesting location permission:', error);
-      setLocationError('Failed to request location permission');
+      setLocationError({
+        code: 1,
+        message: 'Failed to request location permission',
+        type: 'PERMISSION_DENIED',
+      });
+    } finally {
+      setIsRequestingLocation(false);
     }
   }, []);
 
   useEffect(() => {
-    requestLocationPermission();
-  }, [requestLocationPermission]);
+    if (locationServiceInitialized) {
+      requestLocationPermission();
+    }
+  }, [locationServiceInitialized, requestLocationPermission]);
 
   useEffect(() => {
     if (activeTab === 'sightings') {
@@ -268,35 +352,43 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     }
   };
 
-  const getCurrentLocation = () => {
-    // Request location permission and get current location
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const location = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        };
-        setCurrentLocation(location);
-        console.log('Location obtained:', location);
-      },
-      (error) => {
-        console.error('Location error:', error);
-        setLocationError(`Failed to get location: ${error.message}`);
-        // Use placeholder location as fallback
-        setCurrentLocation({
-          latitude: 40.7128,
-          longitude: -74.0060,
-          accuracy: 0,
-        });
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 15000,
-        maximumAge: 10000,
+  const getCurrentLocation = useCallback(async () => {
+    if (!locationServiceInitialized) {
+      console.warn('Location service not initialized');
+      return;
+    }
+
+    try {
+      console.log('Getting current location...');
+      setIsRequestingLocation(true);
+
+      const location = await locationService.getCurrentLocation();
+      setCurrentLocation(location);
+      setLocationError(null);
+
+      // Save to cache
+      await locationService.saveLocationToCache(location);
+
+      console.log('Current location obtained:', location);
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      setLocationError(error as LocationError);
+
+      // Try cached location as fallback
+      const cachedLocation = await locationService.loadLocationFromCache();
+      if (cachedLocation) {
+        setCurrentLocation(cachedLocation);
+        console.log('Using cached location as fallback:', cachedLocation);
+      } else {
+        // Use fallback location
+        const fallbackLocation = locationService.getFallbackLocation();
+        setCurrentLocation(fallbackLocation);
+        console.log('Using fallback location:', fallbackLocation);
       }
-    );
-  };
+    } finally {
+      setIsRequestingLocation(false);
+    }
+  }, [locationServiceInitialized]);
 
   const loadRecentSightings = async () => {
     try {
@@ -370,9 +462,17 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
     try {
       console.log('Submitting report to WildlifeReportsService...');
+
+      // Convert LocationData to Location format expected by the service
+      const locationForReport: Location = {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        accuracy: currentLocation.accuracy,
+      };
+
       const reportId = await WildlifeReportsService.submitReport(
         animalType,
-        currentLocation,
+        locationForReport,
         quantity,
       );
       console.log('Report submitted with ID:', reportId);
@@ -397,48 +497,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   };
 
   const handleQuantityUpdate = async (selectedAnimalType: AnimalType, quantity: number) => {
-    // Convert individual small mammals to the grouped category for reporting
-    const animalType = (selectedAnimalType === 'raccoon' || selectedAnimalType === 'rabbit') 
-      ? 'small_mammals' 
-      : selectedAnimalType;
+    // This function is called from QuantityUpdateModal to provide additional details
+    // after an initial report has been submitted. It should NOT create a new report.
     
-    // Update the existing report with the new animal type and quantity
-    if (!currentLocation) {
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please ensure location services are enabled and try again.',
-      );
-      return;
-    }
+    // Update animal counters for the profile data with the additional details
+    setAnimalCounters(prev => ({
+      ...prev,
+      [selectedAnimalType]: prev[selectedAnimalType] + quantity,
+    }));
 
-    try {
-      // Submit an updated report with the selected animal type and quantity
-      const reportId = await WildlifeReportsService.submitReport(
-        animalType,
-        currentLocation,
-        quantity,
-      );
-
-      if (reportId) {
-        Alert.alert(
-          'Report Updated!',
-          `Successfully updated to ${quantity} ${animalType === 'small_mammals' ? 'Small Mammal' : animalType}${quantity > 1 ? 's' : ''}.`,
-        );
-
-        // Update animal counters for the profile data
-        setAnimalCounters(prev => ({
-          ...prev,
-          [animalType]: prev[animalType] + quantity,
-        }));
-
-        // Always reload sightings after submission
-        await loadRecentSightings();
-      } else {
-        Alert.alert('Error', 'Failed to update report. Please try again.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to update report. Please try again.');
-    }
+    // Show confirmation that additional details were recorded
+    Alert.alert(
+      'Details Updated!',
+      `Additional ${quantity} ${selectedAnimalType}${quantity > 1 ? 's' : ''} recorded.`,
+    );
 
     setShowQuantityUpdateModal(false);
     setLastReportId(null);
@@ -479,6 +551,17 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     setShowAnimalModal(true);
   };
 
+  const handleLocationUpdate = useCallback((location: Location) => {
+    // Convert Location to LocationData
+    const locationData: LocationData = {
+      latitude: location.latitude,
+      longitude: location.longitude,
+      accuracy: location.accuracy,
+      timestamp: Date.now(),
+    };
+    setCurrentLocation(locationData);
+  }, []);
+
   return (
     <View style={styles.background}>
       <View style={styles.overlay}>
@@ -502,8 +585,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               </TouchableOpacity>
               <ErrorBoundary>
                 <WildlifeMap
-                  currentLocation={currentLocation}
-                  onLocationUpdate={setCurrentLocation}
+                  currentLocation={currentLocation ? {
+                    latitude: currentLocation.latitude,
+                    longitude: currentLocation.longitude,
+                    accuracy: currentLocation.accuracy,
+                  } : null}
+                  onLocationUpdate={handleLocationUpdate}
                   showLegend={showLegend}
                 />
               </ErrorBoundary>
@@ -1133,8 +1220,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 <Text style={styles.fullscreenCloseButtonText}>✕</Text>
               </TouchableOpacity>
               <WildlifeMap
-                currentLocation={currentLocation}
-                onLocationUpdate={setCurrentLocation}
+                currentLocation={currentLocation ? {
+                  latitude: currentLocation.latitude,
+                  longitude: currentLocation.longitude,
+                  accuracy: currentLocation.accuracy,
+                } : null}
+                onLocationUpdate={handleLocationUpdate}
                 showLegend={showLegend}
               />
             </View>
