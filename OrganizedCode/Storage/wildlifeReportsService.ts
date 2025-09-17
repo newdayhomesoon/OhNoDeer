@@ -47,7 +47,9 @@ export const WildlifeReportsService = {
     animalCount: number = 1,
   ): Promise<string | null> {
     try {
+      console.log('submitReport called with:', animalType, location, animalCount);
       const user = getCurrentUser();
+      console.log('submitReport - Current user:', user?.uid);
       if (!user) {
         throw new Error('User not authenticated');
       }
@@ -60,7 +62,7 @@ export const WildlifeReportsService = {
         },
         animalCount,
       );
-
+      console.log('submitReport - Report ID returned:', reportId);
       return reportId;
     } catch (error) {
       console.error('Error submitting wildlife report:', error);
@@ -72,11 +74,14 @@ export const WildlifeReportsService = {
   async getUserReports(limit: number = 50): Promise<SightingReport[]> {
     try {
       const user = getCurrentUser();
+      console.log('getUserReports - Current user:', user?.uid);
       if (!user) {
+        console.log('getUserReports - No user found');
         return [];
       }
 
       const firebaseReports = await getUserReports(user.uid);
+      console.log('getUserReports - Firebase reports:', firebaseReports.length, firebaseReports);
       return firebaseReports
         .slice(0, limit)
         .map(firebaseToAppReport)

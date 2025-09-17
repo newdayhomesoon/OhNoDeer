@@ -4,7 +4,7 @@ import {
   signInAnonymously,
   onAuthStateChanged,
   setPersistence,
-  browserLocalPersistence,
+  indexedDBLocalPersistence,
   User,
 } from 'firebase/auth';
 import {
@@ -24,6 +24,7 @@ import {
   getDoc,
 } from 'firebase/firestore';
 import {getFunctions, httpsCallable} from 'firebase/functions';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {firebaseConfig, firebaseConfigIsPlaceholder} from './config';
 // Lightweight event listeners (avoid adding external deps)
 type ConnectivityListener = (state: { offline: boolean; lastChange: number }) => void;
@@ -80,7 +81,11 @@ export interface FirebaseUserProfile {
 // Initialize Firebase only if real config present
 let app: ReturnType<typeof initializeApp> | null = null;
 if (!firebaseConfigIsPlaceholder) {
+  console.log('Initializing Firebase app...');
   app = initializeApp(firebaseConfig);
+  console.log('Firebase app initialized successfully');
+} else {
+  console.warn('Firebase config is placeholder, app not initialized');
 }
 
 // Export helpers that throw clear error if used before proper config
@@ -92,15 +97,20 @@ function requireApp(): ReturnType<typeof initializeApp> {
 }
 
 export const auth = (() => {
+  console.log('Initializing Firebase auth...');
   const authInstance = getAuth(requireApp());
-  // Set persistence to LOCAL to ensure users stay logged in across app restarts
-  setPersistence(authInstance, browserLocalPersistence).catch((error) => {
+  console.log('Setting auth persistence to indexedDBLocalPersistence...');
+  // Set persistence to IndexedDB for React Native compatibility
+  setPersistence(authInstance, indexedDBLocalPersistence).catch((error) => {
     console.warn('Failed to set auth persistence:', error);
   });
+  console.log('Firebase auth initialized successfully');
   return authInstance;
 })();
 export const db = (() => {
+  console.log('Initializing Firestore...');
   const instance = getFirestore(requireApp());
+  console.log('Setting Firestore settings...');
   // Improve reliability in React Native / emulator or restricted network environments
   // Only set settings if not already applied (avoids runtime warnings)
   try {
@@ -109,19 +119,28 @@ export const db = (() => {
       experimentalAutoDetectLongPolling: true,
       useFetchStreams: false,
     });
+    console.log('Firestore settings applied successfully');
   } catch (e) {
-    // Swallow setting errors silently (e.g., if called twice)
+    console.warn('Failed to apply Firestore settings:', e);
   }
   // Initial lightweight probe (non-fatal) to infer connectivity; uses a non-existent doc to reduce cost
+  console.log('Testing Firestore connectivity...');
   (async () => {
     try {
       const probeRef = doc(instance, '__health', 'ping');
       await getDoc(probeRef);
       setOffline(false); // success -> online
+      console.log('Firestore connectivity test passed');
     } catch (e: any) {
-      if (e?.code === 'unavailable') setOffline(true);
+      if (e?.code === 'unavailable') {
+        setOffline(true);
+        console.warn('Firestore connectivity test failed - offline mode');
+      } else {
+        console.warn('Firestore connectivity test error:', e);
+      }
     }
   })();
+  console.log('Firestore initialized successfully');
   return instance;
 })();
 // Region hint (adjust if your functions are deployed elsewhere)
@@ -154,7 +173,9 @@ export const addWildlifeReport = async (
   animalCount: number = 1,
 ): Promise<string | null> => {
   try {
+    console.log('addWildlifeReport called with:', animalType, location, animalCount);
     const user = getCurrentUser();
+    console.log('addWildlifeReport - Current user:', user?.uid);
     if (!user) {
       throw new Error('User not authenticated');
     }
@@ -166,11 +187,13 @@ export const addWildlifeReport = async (
       animalType,
     };
 
+    console.log('addWildlifeReport - Adding to collection with data:', { ...reportData, userId: user.uid });
     const docRef = await addDoc(collection(db, 'wildlife_reports'), {
       ...reportData,
       userId: user.uid,
     });
 
+    console.log('addWildlifeReport - Document added with ID:', docRef.id);
     return docRef.id;
   } catch (error) {
     console.error('Error adding wildlife report:', error);
@@ -182,6 +205,7 @@ export const getUserReports = async (
   userId: string,
 ): Promise<WildlifeReport[]> => {
   try {
+    console.log('getUserReports Firebase - Querying for userId:', userId);
     const q = query(
       collection(db, 'wildlife_reports'),
       where('userId', '==', userId),
@@ -190,7 +214,10 @@ export const getUserReports = async (
     );
 
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map((doc: any) => doc.data() as WildlifeReport);
+    console.log('getUserReports Firebase - Query snapshot size:', querySnapshot.size);
+    const reports = querySnapshot.docs.map((doc: any) => doc.data() as WildlifeReport);
+    console.log('getUserReports Firebase - Reports data:', reports);
+    return reports;
   } catch (error) {
     console.error('Error getting user reports:', error);
     return [];

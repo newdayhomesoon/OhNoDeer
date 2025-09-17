@@ -154,28 +154,13 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   };
 
   const requestLocationPermission = useCallback(async () => {
-    if (Platform.OS === 'android') {
-      try {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: 'Location Permission',
-            message:
-              'Oh No Deer needs access to your location to report wildlife sightings.',
-            buttonPositive: 'OK',
-            buttonNegative: 'Cancel',
-          },
-        );
-        if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-          getCurrentLocation();
-        } else {
-          setLocationError('Location permission denied');
-        }
-      } catch {
-        setLocationError('Failed to request location permission');
-      }
-    } else {
+    try {
+      // For web, we'll use navigator.geolocation
+      // For React Native, this would use PermissionsAndroid or react-native-permissions
       getCurrentLocation();
+    } catch (error) {
+      console.error('Error requesting location permission:', error);
+      setLocationError('Failed to request location permission');
     }
   }, []);
 
@@ -216,10 +201,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   // Load user profile when authentication state changes
   useEffect(() => {
     const loadUserProfile = async (user: any) => {
+      console.log('loadUserProfile called with user:', user?.uid);
       if (user) {
         try {
           // Load user profile from Firestore
           const profile = await WildlifeReportsService.getUserProfile(user.uid);
+          console.log('User profile loaded:', profile);
           
           if (profile) {
             // Update user info with actual profile data
@@ -232,6 +219,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           }
 
           // Load sightings after user is authenticated
+          console.log('Loading sightings after auth...');
           if (activeTab === 'sightings') {
             await loadRecentSightings();
           }
@@ -242,6 +230,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           setUserEmail(user.email || 'No email');
         }
       } else {
+        console.log('No user, clearing data');
         // Reset to default values when logged out
         setUserName('Guest');
         setUserEmail('guest@example.com');
@@ -250,7 +239,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     };
 
     // Listen for authentication state changes
-    const unsubscribe = onAuthStateChange(loadUserProfile);
+    const unsubscribe = onAuthStateChange((user) => {
+      console.log('Auth state changed - User:', user?.uid, user?.email);
+      loadUserProfile(user);
+    });
     
     return unsubscribe;
   }, [activeTab]);
@@ -277,19 +269,39 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   };
 
   const getCurrentLocation = () => {
-    // Location services disabled - use manual location entry instead
-    setLocationError('Location services not available - please enter location manually');
-    // Use placeholder location for testing
-    setCurrentLocation({
-      latitude: 40.7128,
-      longitude: -74.0060,
-      accuracy: 0,
-    });
+    // Request location permission and get current location
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+        };
+        setCurrentLocation(location);
+        console.log('Location obtained:', location);
+      },
+      (error) => {
+        console.error('Location error:', error);
+        setLocationError(`Failed to get location: ${error.message}`);
+        // Use placeholder location as fallback
+        setCurrentLocation({
+          latitude: 40.7128,
+          longitude: -74.0060,
+          accuracy: 0,
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 10000,
+      }
+    );
   };
 
   const loadRecentSightings = async () => {
     try {
       const user = getCurrentUser();
+      console.log('Loading sightings for user:', user?.uid);
       if (!user) {
         console.log('No authenticated user, skipping sightings load');
         setRecentSightings([]);
@@ -297,6 +309,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       }
 
       const sightings = await WildlifeReportsService.getUserReports(20);
+      console.log('Loaded sightings:', sightings.length, sightings);
       setRecentSightings(sightings);
       
       // Calculate animal counters
@@ -322,35 +335,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   };
 
   const handleReportPress = async () => {
-    if (!currentLocation) {
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please ensure location services are enabled and try again.',
-      );
-      return;
-    }
-
-    try {
-      // Submit a quick report with default values
-      const reportId = await WildlifeReportsService.submitReport(
-        'deer', // Default to deer for quick reporting
-        currentLocation,
-        1, // Default quantity
-      );
-
-      if (reportId) {
-        setLastReportId(reportId);
-        // Show quantity update modal immediately (no delay needed since success message is in modal)
-        setShowQuantityUpdateModal(true);
-
-        // Always reload sightings after submission
-        await loadRecentSightings();
-      } else {
-        Alert.alert('Error', 'Failed to submit report. Please try again.');
-      }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to submit report. Please try again.');
-    }
+    // Open animal selection modal instead of submitting immediately
+    setShowAnimalModal(true);
   };
 
   const handleAnimalSelect = async (animal: AnimalType) => {
@@ -373,6 +359,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     animalType: AnimalType,
     quantity: number,
   ) => {
+    console.log('handleSaveSighting called with:', animalType, quantity);
     if (!currentLocation) {
       Alert.alert(
         'Location Error',
@@ -382,11 +369,13 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     }
 
     try {
+      console.log('Submitting report to WildlifeReportsService...');
       const reportId = await WildlifeReportsService.submitReport(
         animalType,
         currentLocation,
         quantity,
       );
+      console.log('Report submitted with ID:', reportId);
 
       if (reportId) {
         Alert.alert(
@@ -397,6 +386,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         );
 
         // Always reload sightings after submission
+        console.log('Reloading sightings after submission...');
         await loadRecentSightings();
       } else {
         Alert.alert('Error', 'Failed to save sighting. Please try again.');
