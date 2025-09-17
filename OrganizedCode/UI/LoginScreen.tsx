@@ -14,7 +14,7 @@ import {
 
 // Font loading for Lugrasimo
 // Removed expo-font import; using fontFamily style only
-import { MaterialIcons } from '@expo/vector-icons';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '../Storage/firebase/credentials';
 import {appleAuth} from '@invertase/react-native-apple-authentication';
@@ -272,21 +272,21 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             style={[styles.button, styles.googleButton]}
             onPress={() => throttle(handleGoogleLogin)}
             disabled={loading}>
-            <MaterialIcons name="account-circle" size={24} color="#fff" />
+            <Icon name="account-circle" size={24} color="#fff" />
             <Text style={[styles.buttonText, styles.googleButtonText]}>Continue with Google</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.appleButton]}
             onPress={() => throttle(handleAppleLogin)}
             disabled={loading}>
-            <MaterialIcons name="phone-iphone" size={24} color="#fff" />
+            <Icon name="phone-iphone" size={24} color="#fff" />
             <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.emailButton]}
             onPress={() => throttle(openEmailModal)}
             disabled={loading}>
-            <MaterialIcons name="email" size={24} color={theme.colors.accent} />
+            <Icon name="email" size={24} color={theme.colors.accent} />
             <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.guestButton} onPress={() => throttle(handleGuestLogin)}>

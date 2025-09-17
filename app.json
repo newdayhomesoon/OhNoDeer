@@ -1,4 +1,33 @@
 {
   "name": "ohnodeer",
-  "displayName": "Oh,No Deer"
+  "displayName": "Oh,No Deer",
+  "expo": {
+    "name": "Oh,No Deer",
+    "slug": "oh-no-deer",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2B2D3A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2B2D3A"
+      },
+      "package": "com.ohnodeer.app"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
 }
