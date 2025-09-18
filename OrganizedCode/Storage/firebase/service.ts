@@ -153,6 +153,12 @@ export const signInUser = async (): Promise<User | null> => {
     console.log('[DEBUG] signInUser - Starting anonymous sign in...');
     const result = await signInAnonymously(auth);
     console.log('[DEBUG] signInUser - Anonymous sign in successful, user:', result.user.uid);
+    console.log('[DEBUG] signInUser - User details:', {
+      uid: result.user.uid,
+      email: result.user.email,
+      isAnonymous: result.user.isAnonymous,
+      emailVerified: result.user.emailVerified
+    });
     return result.user;
   } catch (error) {
     console.error('[DEBUG] signInUser - Authentication error:', error);
@@ -161,11 +167,17 @@ export const signInUser = async (): Promise<User | null> => {
 };
 
 export const getCurrentUser = (): User | null => {
-  return auth.currentUser;
+  const user = auth.currentUser;
+  console.log('[DEBUG] getCurrentUser called, current user:', user?.uid, user?.isAnonymous);
+  return user;
 };
 
 export const onAuthStateChange = (callback: (user: User | null) => void) => {
-  return onAuthStateChanged(auth, callback);
+  console.log('[DEBUG] onAuthStateChange listener registered');
+  return onAuthStateChanged(auth, (user) => {
+    console.log('[DEBUG] onAuthStateChange fired with user:', user?.uid, user?.isAnonymous);
+    callback(user);
+  });
 };
 
 // Wildlife Reports
@@ -208,6 +220,9 @@ export const getUserReports = async (
 ): Promise<WildlifeReport[]> => {
   try {
     console.log('[DEBUG] Firebase.getUserReports - Querying for userId:', userId);
+    console.log('[DEBUG] Firebase.getUserReports - User ID type:', typeof userId);
+    console.log('[DEBUG] Firebase.getUserReports - User ID length:', userId?.length);
+    
     const q = query(
       collection(db, 'wildlife_reports'),
       where('userId', '==', userId),
@@ -215,18 +230,32 @@ export const getUserReports = async (
       limit(50),
     );
 
+    console.log('[DEBUG] Firebase.getUserReports - Query object created');
     console.log('[DEBUG] Firebase.getUserReports - Executing query...');
     const querySnapshot = await getDocs(q);
     console.log('[DEBUG] Firebase.getUserReports - Query completed. Snapshot size:', querySnapshot.size);
+    console.log('[DEBUG] Firebase.getUserReports - Query completed. Snapshot empty:', querySnapshot.empty);
     
     if (querySnapshot.empty) {
       console.log('[DEBUG] Firebase.getUserReports - No documents found for user:', userId);
+      console.log('[DEBUG] Firebase.getUserReports - Checking if there are any documents in the collection at all...');
+      
+      // Check if there are any documents in the collection
+      const allDocsQuery = query(collection(db, 'wildlife_reports'), limit(1));
+      const allDocsSnapshot = await getDocs(allDocsQuery);
+      console.log('[DEBUG] Firebase.getUserReports - Total documents in collection:', allDocsSnapshot.size);
+      
+      if (allDocsSnapshot.size > 0) {
+        console.log('[DEBUG] Firebase.getUserReports - Sample document data:', allDocsSnapshot.docs[0].data());
+      }
+      
       return [];
     }
     
     const reports = querySnapshot.docs.map((doc: any) => {
       const data = doc.data() as WildlifeReport;
       console.log('[DEBUG] Firebase.getUserReports - Document ID:', doc.id, 'Data:', data);
+      console.log('[DEBUG] Firebase.getUserReports - Document userId matches query userId:', data.userId === userId);
       return data;
     });
     
@@ -234,6 +263,7 @@ export const getUserReports = async (
     return reports;
   } catch (error) {
     console.error('[DEBUG] Firebase.getUserReports - Error getting user reports:', error);
+    console.error('[DEBUG] Firebase.getUserReports - Error details:', error instanceof Error ? error.message : error);
     return [];
   }
 };

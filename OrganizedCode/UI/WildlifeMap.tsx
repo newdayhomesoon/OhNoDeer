@@ -90,10 +90,10 @@ const AnimatedUserLocation: React.FC<{location: Location}> = ({location}) => {
 const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpdate, showLegend = true}) => {
   const [hotspots, setHotspots] = useState<FirebaseHotspot[]>([]);
   const [mapRegion, setMapRegion] = useState<Region>({
-    latitude: 37.78825,
-    longitude: -122.4324,
-    latitudeDelta: 0.0922,
-    longitudeDelta: 0.0421,
+    latitude: 39.8283,
+    longitude: -98.5795,
+    latitudeDelta: 50.0,
+    longitudeDelta: 50.0,
   });
 
   const getHeatColor = (heatLevel: 'Low' | 'Medium' | 'High'): string => {
@@ -163,6 +163,9 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
         region={mapRegion}
         showsUserLocation={false}
         showsMyLocationButton={false}
+        followsUserLocation={false}
+        showsCompass={false}
+        toolbarEnabled={false}
         onMapReady={() => {
           console.log('[Map] onMapReady');
           setMapReady(true);
