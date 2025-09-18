@@ -268,21 +268,21 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             style={[styles.button, styles.googleButton]}
             onPress={() => throttle(handleGoogleLogin)}
             disabled={loading}>
-            <Text style={[styles.buttonText, styles.googleButtonText]}>G</Text>
+            <Text style={[styles.iconText, styles.googleIconText]}>G</Text>
             <Text style={[styles.buttonText, styles.googleButtonText]}>Continue with Google</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.appleButton]}
             onPress={() => throttle(handleAppleLogin)}
             disabled={loading}>
-            <Text style={[styles.buttonText, styles.appleButtonText]}></Text>
+            <Text style={[styles.iconText, styles.appleIconText]}></Text>
             <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.emailButton]}
             onPress={() => throttle(openEmailModal)}
             disabled={loading}>
-            <Text style={[styles.buttonText, styles.emailButtonText]}>✉</Text>
+            <Text style={[styles.iconText, styles.emailIconText]}>✉</Text>
             <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.guestButton} onPress={() => throttle(handleGuestLogin)}>
@@ -540,6 +540,20 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   emailButtonText: {
+    color: theme.colors.accent,
+  },
+  iconText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginRight: theme.spacing.s,
+  },
+  googleIconText: {
+    color: '#fff',
+  },
+  appleIconText: {
+    color: '#fff',
+  },
+  emailIconText: {
     color: theme.colors.accent,
   },
   guestLink: {

@@ -73,27 +73,28 @@ export const WildlifeReportsService = {
   // Get user's recent reports
   async getUserReports(limit: number = 50): Promise<SightingReport[]> {
     try {
+      console.log('[DEBUG] WildlifeReportsService.getUserReports called with limit:', limit);
       const user = getCurrentUser();
-      console.log('WildlifeReportsService.getUserReports - Current user:', user?.uid, user?.email);
+      console.log('[DEBUG] WildlifeReportsService - Current user:', user?.uid, user?.email, user?.isAnonymous);
       if (!user) {
-        console.log('WildlifeReportsService.getUserReports - No user found');
+        console.log('[DEBUG] WildlifeReportsService - No user found');
         return [];
       }
 
-      console.log('WildlifeReportsService.getUserReports - Calling Firebase getUserReports for user:', user.uid);
+      console.log('[DEBUG] WildlifeReportsService - Calling Firebase getUserReports for user:', user.uid);
       const firebaseReports = await getUserReports(user.uid);
-      console.log('WildlifeReportsService.getUserReports - Firebase reports received:', firebaseReports.length);
-      console.log('WildlifeReportsService.getUserReports - Raw Firebase reports:', firebaseReports);
+      console.log('[DEBUG] WildlifeReportsService - Firebase reports received:', firebaseReports.length);
+      console.log('[DEBUG] WildlifeReportsService - Raw Firebase reports:', firebaseReports);
       
       const appReports = firebaseReports
         .slice(0, limit)
         .map(firebaseToAppReport)
         .sort((a, b) => b.timestamp - a.timestamp);
       
-      console.log('WildlifeReportsService.getUserReports - Converted app reports:', appReports.length, appReports);
+      console.log('[DEBUG] WildlifeReportsService - Converted app reports:', appReports.length, appReports);
       return appReports;
     } catch (error) {
-      console.error('WildlifeReportsService.getUserReports - Error getting user reports:', error);
+      console.error('[DEBUG] WildlifeReportsService.getUserReports - Error getting user reports:', error);
       return [];
     }
   },

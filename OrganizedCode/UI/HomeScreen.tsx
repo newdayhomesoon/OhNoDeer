@@ -392,21 +392,34 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   const loadRecentSightings = async () => {
     try {
+      console.log('[DEBUG] loadRecentSightings called');
       const user = getCurrentUser();
-      console.log('Loading sightings for user:', user?.uid, user?.email);
+      console.log('[DEBUG] Current user:', user?.uid, user?.email, user?.isAnonymous);
       if (!user) {
-        console.log('No authenticated user, skipping sightings load');
+        console.log('[DEBUG] No authenticated user, skipping sightings load');
         setRecentSightings([]);
         return;
       }
 
-      console.log('Fetching user reports from Firebase...');
+      console.log('[DEBUG] User authenticated, fetching user reports...');
       const sightings = await WildlifeReportsService.getUserReports(20);
-      console.log('Raw sightings data from Firebase:', sightings);
-      console.log('Number of sightings loaded:', sightings.length);
+      console.log('[DEBUG] Raw sightings data from service:', sightings);
+      console.log('[DEBUG] Number of sightings loaded:', sightings.length);
+      
+      // Log each sighting for debugging
+      sightings.forEach((sighting, index) => {
+        console.log(`[DEBUG] Sighting ${index}:`, {
+          id: sighting.id,
+          type: sighting.type,
+          quantity: sighting.quantity,
+          timestamp: sighting.timestamp,
+          location: sighting.location,
+          reportedBy: sighting.reportedBy
+        });
+      });
       
       setRecentSightings(sightings);
-      console.log('Recent sightings state updated:', sightings);
+      console.log('[DEBUG] Recent sightings state updated:', sightings);
       
       // Calculate animal counters
       const counters = { 
@@ -418,15 +431,15 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         small_mammals: 0 
       };
       sightings.forEach(sighting => {
-        console.log('Processing sighting:', sighting.type, sighting.quantity);
+        console.log('[DEBUG] Processing sighting for counters:', sighting.type, sighting.quantity);
         if (counters.hasOwnProperty(sighting.type)) {
           counters[sighting.type] += sighting.quantity;
         }
       });
-      console.log('Calculated animal counters:', counters);
+      console.log('[DEBUG] Calculated animal counters:', counters);
       setAnimalCounters(counters);
     } catch (error) {
-      console.error('Error loading recent sightings:', error);
+      console.error('[DEBUG] Error loading recent sightings:', error);
       setRecentSightings([]);
       Alert.alert('Error', 'Failed to load recent sightings. Please check your connection and try again.');
     }
@@ -638,14 +651,57 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                       Debug Info:
                     </Text>
                     <Text style={styles.debugText}>
-                      User: {getCurrentUser()?.uid ? 'Authenticated' : 'Not authenticated'}
+                      User: {getCurrentUser() ? 'Authenticated' : 'Not authenticated'}
                     </Text>
                     <Text style={styles.debugText}>
                       User ID: {getCurrentUser()?.uid || 'None'}
                     </Text>
                     <Text style={styles.debugText}>
+                      User Email: {getCurrentUser()?.email || 'None'}
+                    </Text>
+                    <Text style={styles.debugText}>
+                      Is Anonymous: {getCurrentUser()?.isAnonymous ? 'Yes' : 'No'}
+                    </Text>
+                    <Text style={styles.debugText}>
                       Sightings loaded: {recentSightings.length}
                     </Text>
+                    <Text style={styles.debugText}>
+                      Last load attempt: {new Date().toLocaleTimeString()}
+                    </Text>
+                    <TouchableOpacity
+                      style={styles.debugButton}
+                      onPress={async () => {
+                        console.log('[DEBUG] Test button pressed - creating test sighting');
+                        try {
+                          const testLocation = currentLocation || {
+                            latitude: 40.7128,
+                            longitude: -74.0060,
+                            accuracy: 10,
+                            timestamp: Date.now()
+                          };
+                          
+                          const reportId = await WildlifeReportsService.submitReport(
+                            'deer',
+                            {
+                              latitude: testLocation.latitude,
+                              longitude: testLocation.longitude,
+                              accuracy: testLocation.accuracy
+                            },
+                            1
+                          );
+                          
+                          console.log('[DEBUG] Test sighting created with ID:', reportId);
+                          Alert.alert('Test Sighting Created', `Report ID: ${reportId}`);
+                          
+                          // Reload sightings
+                          await loadRecentSightings();
+                        } catch (error) {
+                          console.error('[DEBUG] Error creating test sighting:', error);
+                          Alert.alert('Error', 'Failed to create test sighting');
+                        }
+                      }}>
+                      <Text style={styles.debugButtonText}>Create Test Sighting</Text>
+                    </TouchableOpacity>
                   </View>
                 </View>
               )}
@@ -1649,13 +1705,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  debugInfo: {
-    marginTop: 20,
-    padding: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  debugButton: {
+    backgroundColor: theme.colors.accent,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 8,
-    width: '100%',
-    alignItems: 'flex-start',
+    marginTop: 8,
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.caption,
+    fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
   },
   debugText: {
     color: theme.colors.textSecondary,

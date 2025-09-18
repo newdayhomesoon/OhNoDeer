@@ -81,11 +81,11 @@ export interface FirebaseUserProfile {
 // Initialize Firebase only if real config present
 let app: ReturnType<typeof initializeApp> | null = null;
 if (!firebaseConfigIsPlaceholder) {
-  console.log('Initializing Firebase app...');
+  console.log('[DEBUG] Initializing Firebase app...');
   app = initializeApp(firebaseConfig);
-  console.log('Firebase app initialized successfully');
+  console.log('[DEBUG] Firebase app initialized successfully');
 } else {
-  console.warn('Firebase config is placeholder, app not initialized');
+  console.warn('[DEBUG] Firebase config is placeholder, app not initialized');
 }
 
 // Export helpers that throw clear error if used before proper config
@@ -97,20 +97,20 @@ function requireApp(): ReturnType<typeof initializeApp> {
 }
 
 export const auth = (() => {
-  console.log('Initializing Firebase auth...');
+  console.log('[DEBUG] Initializing Firebase auth...');
   const authInstance = getAuth(requireApp());
-  console.log('Setting auth persistence to indexedDBLocalPersistence...');
+  console.log('[DEBUG] Setting auth persistence to indexedDBLocalPersistence...');
   // Set persistence to IndexedDB for React Native compatibility
   setPersistence(authInstance, indexedDBLocalPersistence).catch((error) => {
-    console.warn('Failed to set auth persistence:', error);
+    console.warn('[DEBUG] Failed to set auth persistence:', error);
   });
-  console.log('Firebase auth initialized successfully');
+  console.log('[DEBUG] Firebase auth initialized successfully');
   return authInstance;
 })();
 export const db = (() => {
-  console.log('Initializing Firestore...');
+  console.log('[DEBUG] Initializing Firestore...');
   const instance = getFirestore(requireApp());
-  console.log('Setting Firestore settings...');
+  console.log('[DEBUG] Setting Firestore settings...');
   // Improve reliability in React Native / emulator or restricted network environments
   // Only set settings if not already applied (avoids runtime warnings)
   try {
@@ -119,28 +119,28 @@ export const db = (() => {
       experimentalAutoDetectLongPolling: true,
       useFetchStreams: false,
     });
-    console.log('Firestore settings applied successfully');
+    console.log('[DEBUG] Firestore settings applied successfully');
   } catch (e) {
-    console.warn('Failed to apply Firestore settings:', e);
+    console.warn('[DEBUG] Failed to apply Firestore settings:', e);
   }
   // Initial lightweight probe (non-fatal) to infer connectivity; uses a non-existent doc to reduce cost
-  console.log('Testing Firestore connectivity...');
+  console.log('[DEBUG] Testing Firestore connectivity...');
   (async () => {
     try {
       const probeRef = doc(instance, '__health', 'ping');
       await getDoc(probeRef);
       setOffline(false); // success -> online
-      console.log('Firestore connectivity test passed');
+      console.log('[DEBUG] Firestore connectivity test passed');
     } catch (e: any) {
       if (e?.code === 'unavailable') {
         setOffline(true);
-        console.warn('Firestore connectivity test failed - offline mode');
+        console.warn('[DEBUG] Firestore connectivity test failed - offline mode');
       } else {
-        console.warn('Firestore connectivity test error:', e);
+        console.warn('[DEBUG] Firestore connectivity test error:', e);
       }
     }
   })();
-  console.log('Firestore initialized successfully');
+  console.log('[DEBUG] Firestore initialized successfully');
   return instance;
 })();
 // Region hint (adjust if your functions are deployed elsewhere)
@@ -150,10 +150,12 @@ export const functions = (() => getFunctions(requireApp(), FUNCTIONS_REGION))();
 // Authentication
 export const signInUser = async (): Promise<User | null> => {
   try {
+    console.log('[DEBUG] signInUser - Starting anonymous sign in...');
     const result = await signInAnonymously(auth);
+    console.log('[DEBUG] signInUser - Anonymous sign in successful, user:', result.user.uid);
     return result.user;
   } catch (error) {
-    console.error('Authentication error:', error);
+    console.error('[DEBUG] signInUser - Authentication error:', error);
     return null;
   }
 };
@@ -173,9 +175,9 @@ export const addWildlifeReport = async (
   animalCount: number = 1,
 ): Promise<string | null> => {
   try {
-    console.log('addWildlifeReport called with:', animalType, location, animalCount);
+    console.log('[DEBUG] addWildlifeReport called with:', animalType, location, animalCount);
     const user = getCurrentUser();
-    console.log('addWildlifeReport - Current user:', user?.uid);
+    console.log('[DEBUG] addWildlifeReport - Current user:', user?.uid);
     if (!user) {
       throw new Error('User not authenticated');
     }
@@ -187,16 +189,16 @@ export const addWildlifeReport = async (
       animalType,
     };
 
-    console.log('addWildlifeReport - Adding to collection with data:', { ...reportData, userId: user.uid });
+    console.log('[DEBUG] addWildlifeReport - Adding to collection with data:', { ...reportData, userId: user.uid });
     const docRef = await addDoc(collection(db, 'wildlife_reports'), {
       ...reportData,
       userId: user.uid,
     });
 
-    console.log('addWildlifeReport - Document added with ID:', docRef.id);
+    console.log('[DEBUG] addWildlifeReport - Document added with ID:', docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error('Error adding wildlife report:', error);
+    console.error('[DEBUG] Error adding wildlife report:', error);
     return null;
   }
 };
@@ -205,7 +207,7 @@ export const getUserReports = async (
   userId: string,
 ): Promise<WildlifeReport[]> => {
   try {
-    console.log('Firebase.getUserReports - Querying for userId:', userId);
+    console.log('[DEBUG] Firebase.getUserReports - Querying for userId:', userId);
     const q = query(
       collection(db, 'wildlife_reports'),
       where('userId', '==', userId),
@@ -213,25 +215,25 @@ export const getUserReports = async (
       limit(50),
     );
 
-    console.log('Firebase.getUserReports - Executing query...');
+    console.log('[DEBUG] Firebase.getUserReports - Executing query...');
     const querySnapshot = await getDocs(q);
-    console.log('Firebase.getUserReports - Query completed. Snapshot size:', querySnapshot.size);
+    console.log('[DEBUG] Firebase.getUserReports - Query completed. Snapshot size:', querySnapshot.size);
     
     if (querySnapshot.empty) {
-      console.log('Firebase.getUserReports - No documents found for user:', userId);
+      console.log('[DEBUG] Firebase.getUserReports - No documents found for user:', userId);
       return [];
     }
     
     const reports = querySnapshot.docs.map((doc: any) => {
       const data = doc.data() as WildlifeReport;
-      console.log('Firebase.getUserReports - Document ID:', doc.id, 'Data:', data);
+      console.log('[DEBUG] Firebase.getUserReports - Document ID:', doc.id, 'Data:', data);
       return data;
     });
     
-    console.log('Firebase.getUserReports - Total reports found:', reports.length);
+    console.log('[DEBUG] Firebase.getUserReports - Total reports found:', reports.length);
     return reports;
   } catch (error) {
-    console.error('Firebase.getUserReports - Error getting user reports:', error);
+    console.error('[DEBUG] Firebase.getUserReports - Error getting user reports:', error);
     return [];
   }
 };
