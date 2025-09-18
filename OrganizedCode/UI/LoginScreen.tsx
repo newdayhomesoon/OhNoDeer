@@ -11,10 +11,6 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
 } from 'react-native';
-
-// Font loading for Lugrasimo
-// Removed expo-font import; using fontFamily style only
-import Icon from 'react-native-vector-icons/MaterialIcons';
 import {GoogleSignin} from '@react-native-google-signin/google-signin';
 import { GOOGLE_WEB_CLIENT_ID } from '../Storage/firebase/credentials';
 import {appleAuth} from '@invertase/react-native-apple-authentication';
@@ -272,21 +268,21 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             style={[styles.button, styles.googleButton]}
             onPress={() => throttle(handleGoogleLogin)}
             disabled={loading}>
-            <Icon name="account-circle" size={24} color="#fff" />
+            <Text style={[styles.buttonText, styles.googleButtonText]}>G</Text>
             <Text style={[styles.buttonText, styles.googleButtonText]}>Continue with Google</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.appleButton]}
             onPress={() => throttle(handleAppleLogin)}
             disabled={loading}>
-            <Icon name="phone-iphone" size={24} color="#fff" />
+            <Text style={[styles.buttonText, styles.appleButtonText]}></Text>
             <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.button, styles.emailButton]}
             onPress={() => throttle(openEmailModal)}
             disabled={loading}>
-            <Icon name="email" size={24} color={theme.colors.accent} />
+            <Text style={[styles.buttonText, styles.emailButtonText]}>✉</Text>
             <Text style={[styles.buttonText, styles.emailButtonText]}>Continue with Email</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.guestButton} onPress={() => throttle(handleGuestLogin)}>
