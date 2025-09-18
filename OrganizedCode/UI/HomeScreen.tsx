@@ -526,6 +526,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         // Always reload sightings after submission
         console.log('[DEBUG] Reloading sightings after submission...');
         await loadRecentSightings();
+
+        // Switch to 'View Recent Sightings' tab so user sees update
+        setActiveTab('sightings');
       } else {
         console.log('[DEBUG] Report submission returned null ID');
         Alert.alert('Error', 'Failed to save sighting. Please try again.');

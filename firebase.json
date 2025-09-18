@@ -8,8 +8,7 @@
     ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/admin-dashboard.html"
+  "source": "**"
       }
     ]
   }

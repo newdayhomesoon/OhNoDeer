@@ -19,73 +19,6 @@ interface WildlifeMapProps {
   showLegend?: boolean;
 }
 
-const AnimatedUserLocation: React.FC<{location: Location}> = ({location}) => {
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(0.8)).current;
-
-  useEffect(() => {
-    const pulseAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.5,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    const opacityAnimation = Animated.loop(
-      Animated.sequence([
-        Animated.timing(opacityAnim, {
-          toValue: 0.3,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(opacityAnim, {
-          toValue: 0.8,
-          duration: 1500,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    pulseAnimation.start();
-    opacityAnimation.start();
-
-    return () => {
-      pulseAnimation.stop();
-      opacityAnimation.stop();
-    };
-  }, [pulseAnim, opacityAnim]);
-
-  return (
-    <Marker
-      coordinate={{
-        latitude: location.latitude,
-        longitude: location.longitude,
-      }}
-      anchor={{x: 0.5, y: 0.5}}
-    >
-      <View style={styles.userLocationContainer}>
-        <Animated.View
-          style={[
-            styles.userLocationPulse,
-            {
-              transform: [{scale: pulseAnim}],
-              opacity: opacityAnim,
-            },
-          ]}
-        />
-        <View style={styles.userLocationCore} />
-      </View>
-    </Marker>
-  );
-};
 
 const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpdate, showLegend = true}) => {
   const [hotspots, setHotspots] = useState<FirebaseHotspot[]>([]);
@@ -180,9 +113,16 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
           }
         }}>
         {currentLocation && featureFlags.ENABLE_USER_LOCATION && (
-          <>
-            <AnimatedUserLocation location={currentLocation} />
-          </>
+          <Circle
+            center={{
+              latitude: currentLocation.latitude,
+              longitude: currentLocation.longitude,
+            }}
+            radius={25}
+            fillColor={'rgba(74, 144, 226, 0.3)'}
+            strokeColor={'rgba(74, 144, 226, 0.6)'}
+            strokeWidth={2}
+          />
         )}
 
         {hotspots.map((hotspot, index) => (

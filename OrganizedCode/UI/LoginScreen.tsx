@@ -1,4 +1,5 @@
 import React, {useState, useEffect, useRef} from 'react';
+import { Image } from 'react-native';
 import {
   View,
   Text,
@@ -275,7 +276,11 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             style={[styles.button, styles.appleButton]}
             onPress={() => throttle(handleAppleLogin)}
             disabled={loading}>
-            <Text style={[styles.iconText, styles.appleIconText]}>🍎</Text>
+            <Image
+              source={require('../../assets/apple-logo.png')}
+              style={{ width: 24, height: 24, marginRight: theme.spacing.s, tintColor: '#fff' }}
+              resizeMode="contain"
+            />
             <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
           </TouchableOpacity>
           <TouchableOpacity
