@@ -162,7 +162,7 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
         style={styles.map}
         region={mapRegion}
         showsUserLocation={false}
-        showsMyLocationButton={featureFlags.ENABLE_USER_LOCATION}
+        showsMyLocationButton={false}
         onMapReady={() => {
           console.log('[Map] onMapReady');
           setMapReady(true);
@@ -180,7 +180,9 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
           }
         }}>
         {currentLocation && featureFlags.ENABLE_USER_LOCATION && (
-          <AnimatedUserLocation location={currentLocation} />
+          <>
+            <AnimatedUserLocation location={currentLocation} />
+          </>
         )}
 
         {hotspots.map((hotspot, index) => (

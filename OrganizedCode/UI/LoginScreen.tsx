@@ -275,7 +275,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             style={[styles.button, styles.appleButton]}
             onPress={() => throttle(handleAppleLogin)}
             disabled={loading}>
-            <Text style={[styles.iconText, styles.appleIconText]}></Text>
+            <Text style={[styles.iconText, styles.appleIconText]}>🍎</Text>
             <Text style={[styles.buttonText, styles.appleButtonText]}>Continue with Apple</Text>
           </TouchableOpacity>
           <TouchableOpacity

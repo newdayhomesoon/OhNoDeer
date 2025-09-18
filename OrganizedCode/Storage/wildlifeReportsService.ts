@@ -47,12 +47,32 @@ export const WildlifeReportsService = {
     animalCount: number = 1,
   ): Promise<string | null> {
     try {
-      console.log('submitReport called with:', animalType, location, animalCount);
+      console.log('[DEBUG] WildlifeReportsService.submitReport called with:', {
+        animalType,
+        location,
+        animalCount,
+        locationKeys: Object.keys(location),
+        locationValues: Object.values(location)
+      });
+      
       const user = getCurrentUser();
-      console.log('submitReport - Current user:', user?.uid);
+      console.log('[DEBUG] WildlifeReportsService.submitReport - Current user:', {
+        uid: user?.uid,
+        email: user?.email,
+        isAnonymous: user?.isAnonymous,
+        exists: !!user
+      });
+      
       if (!user) {
+        console.log('[DEBUG] WildlifeReportsService.submitReport - No authenticated user, throwing error');
         throw new Error('User not authenticated');
       }
+
+      console.log('[DEBUG] WildlifeReportsService.submitReport - Calling addWildlifeReport with:', {
+        animalType,
+        location: { latitude: location.latitude, longitude: location.longitude },
+        animalCount
+      });
 
       const reportId = await addWildlifeReport(
         animalType,
@@ -62,10 +82,15 @@ export const WildlifeReportsService = {
         },
         animalCount,
       );
-      console.log('submitReport - Report ID returned:', reportId);
+      
+      console.log('[DEBUG] WildlifeReportsService.submitReport - addWildlifeReport returned:', reportId);
+      console.log('[DEBUG] WildlifeReportsService.submitReport - Report ID type:', typeof reportId);
+      console.log('[DEBUG] WildlifeReportsService.submitReport - Report ID truthy:', !!reportId);
+      
       return reportId;
     } catch (error) {
-      console.error('Error submitting wildlife report:', error);
+      console.error('[DEBUG] WildlifeReportsService.submitReport - Error submitting wildlife report:', error);
+      console.error('[DEBUG] WildlifeReportsService.submitReport - Error stack:', error instanceof Error ? error.stack : 'No stack trace');
       return null;
     }
   },

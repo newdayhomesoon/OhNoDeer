@@ -470,8 +470,23 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     animalType: AnimalType,
     quantity: number,
   ) => {
-    console.log('handleSaveSighting called with:', animalType, quantity);
+    console.log('[DEBUG] handleSaveSighting called with:', animalType, quantity);
+    
+    // Check authentication first
+    const user = getCurrentUser();
+    console.log('[DEBUG] Current user for sighting:', user?.uid, user?.email, user?.isAnonymous);
+    
+    if (!user) {
+      console.log('[DEBUG] No authenticated user, cannot save sighting');
+      Alert.alert(
+        'Authentication Required',
+        'You must be logged in to report sightings. Please log in and try again.',
+      );
+      return;
+    }
+
     if (!currentLocation) {
+      console.log('[DEBUG] No current location available');
       Alert.alert(
         'Location Error',
         'Unable to get your current location. Please ensure location services are enabled and try again.',
@@ -479,8 +494,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       return;
     }
 
+    console.log('[DEBUG] All checks passed, submitting report...');
+
     try {
-      console.log('Submitting report to WildlifeReportsService...');
+      console.log('[DEBUG] Submitting report to WildlifeReportsService...');
 
       // Convert LocationData to Location format expected by the service
       const locationForReport: Location = {
@@ -489,12 +506,14 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         accuracy: currentLocation.accuracy,
       };
 
+      console.log('[DEBUG] Location for report:', locationForReport);
+
       const reportId = await WildlifeReportsService.submitReport(
         animalType,
         locationForReport,
         quantity,
       );
-      console.log('Report submitted with ID:', reportId);
+      console.log('[DEBUG] Report submitted with ID:', reportId);
 
       if (reportId) {
         Alert.alert(
@@ -505,12 +524,14 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         );
 
         // Always reload sightings after submission
-        console.log('Reloading sightings after submission...');
+        console.log('[DEBUG] Reloading sightings after submission...');
         await loadRecentSightings();
       } else {
+        console.log('[DEBUG] Report submission returned null ID');
         Alert.alert('Error', 'Failed to save sighting. Please try again.');
       }
-    } catch {
+    } catch (error) {
+      console.error('[DEBUG] Error in handleSaveSighting:', error);
       Alert.alert('Error', 'Failed to save sighting. Please try again.');
     }
   };
@@ -1718,6 +1739,14 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.caption,
     fontWeight: '600',
     fontFamily: theme.fontFamily.openSans,
+  },
+  debugInfo: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    width: '100%',
+    alignItems: 'flex-start',
   },
   debugText: {
     color: theme.colors.textSecondary,
