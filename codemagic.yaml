@@ -7,11 +7,13 @@ workflows:
       vars:
         REACT_NATIVE_VERSION: 0.72.17
         NODE_VERSION: 18.20.4
+        NPM_CONFIG_LEGACY_PEER_DEPS: true
     scripts:
       - name: Set up Node.js
         script: |
           echo "Node version: $(node --version)"
           echo "NPM version: $(npm --version)"
+          npm config set legacy-peer-deps true
       - name: Clean up and Install dependencies
         script: |
           rm -rf node_modules
@@ -22,29 +24,12 @@ workflows:
           rm -rf .gradle
           rm -f android/app/src/main/assets/index.android.bundle
           npm cache clean --force
-          npm install
-      - name: Install Expo CLI and fix dependencies
-        script: |
-          npm install -g @expo/cli
-          echo "Expo CLI version: $(expo --version)"
-          # Fix any Expo dependency issues
-          npx expo install --fix
-      - name: Create Expo configuration
-        script: |
-          # Ensure Expo can find the app configuration
-          echo "Checking Expo configuration..."
-          npx expo config --type public
+          npm cache verify
+          npm install --legacy-peer-deps
       - name: Bundle JS for Android
         script: |
           mkdir -p android/app/src/main/assets
-          # Use Expo's bundler if available, fallback to React Native
-          if command -v expo &> /dev/null; then
-            echo "Using Expo bundler..."
-            npx expo export --platform android --output-dir android/app/src/main/assets
-          else
-            echo "Using React Native bundler..."
-            npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
-          fi
+          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
       - name: Build Android Release
         script: |
           cd android

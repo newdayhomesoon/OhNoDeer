@@ -1,5 +1,4 @@
 const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
-const path = require('path');
 
 /**
  * Metro configuration
@@ -12,10 +11,6 @@ const config = {
     extraNodeModules: {
       buffer: require.resolve('buffer'),
     },
-    // Add support for Expo modules
-    nodeModulesPaths: [
-      path.resolve(__dirname, 'node_modules'),
-    ],
   },
   transformer: {
     getTransformOptions: async () => ({
@@ -25,10 +20,6 @@ const config = {
       },
     }),
   },
-  // Add watch folders for Expo
-  watchFolders: [
-    path.resolve(__dirname, 'node_modules'),
-  ],
 };
 
 module.exports = mergeConfig(getDefaultConfig(__dirname), config);
