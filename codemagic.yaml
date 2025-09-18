@@ -29,7 +29,47 @@ workflows:
       - name: Bundle JS for Android
         script: |
           mkdir -p android/app/src/main/assets
-          npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res
+          echo "Creating bundle with entry file: index.js"
+          echo "App name from app.json: $(cat app.json | grep -o '"name": "[^"]*"' | cut -d'"' -f4)"
+          echo "Current directory: $(pwd)"
+
+          # Verify entry file exists
+          if [ ! -f index.js ]; then
+            echo "ERROR: index.js not found!"
+            ls -la
+            exit 1
+          fi
+
+          # Verify App.tsx exists
+          if [ ! -f App.tsx ]; then
+            echo "ERROR: App.tsx not found!"
+            ls -la
+            exit 1
+          fi
+
+          echo "Entry files exist, creating bundle..."
+
+          # Create bundle with explicit configuration
+          NODE_OPTIONS="--max-old-space-size=4096" npx react-native bundle \
+            --platform android \
+            --dev false \
+            --entry-file index.js \
+            --bundle-output android/app/src/main/assets/index.android.bundle \
+            --assets-dest android/app/src/main/res \
+            --reset-cache \
+            --verbose
+
+          # Verify bundle was created
+          if [ -f android/app/src/main/assets/index.android.bundle ]; then
+            echo "✅ Bundle created successfully"
+            echo "Bundle size: $(stat -f%z android/app/src/main/assets/index.android.bundle 2>/dev/null || echo 'unknown')"
+            ls -la android/app/src/main/assets/
+          else
+            echo "❌ ERROR: Bundle creation failed!"
+            echo "Checking for any generated files..."
+            find android/app/src/main/assets/ -name "*.bundle" 2>/dev/null || echo "No bundle files found"
+            exit 1
+          fi
       - name: Build Android Release
         script: |
           cd android
