@@ -67,6 +67,8 @@ export interface FirebaseHotspot {
   lastUpdated: Timestamp;
   gridId: string;
   radius: number;
+  animalType: string;
+  county?: string | null;
 }
 
 export interface FirebaseUserProfile {
@@ -239,6 +241,41 @@ export const getUserReports = async (
 };
 
 // Hotspots
+// Create or update a hotspot for a sighting
+export const createOrUpdateHotspot = async (
+  latitude: number,
+  longitude: number,
+  animalType: string,
+  quantity: number,
+  county: string | null = null
+) => {
+  // Use a grid system for hotspot grouping (e.g., round lat/lng to nearest 0.01)
+  const gridLat = Math.round(latitude * 100) / 100;
+  const gridLng = Math.round(longitude * 100) / 100;
+  const gridId = `${animalType}_${gridLat}_${gridLng}`;
+  const hotspotRef = doc(db, 'hotspots', gridId);
+  const hotspotSnap = await getDoc(hotspotRef);
+  let newCount = quantity;
+  let heatLevel: 'Low' | 'Medium' | 'High' = 'Low';
+  if (hotspotSnap.exists()) {
+    const data = hotspotSnap.data();
+    newCount += data.reportCount || 0;
+  }
+  if (newCount >= 5) heatLevel = 'High';
+  else if (newCount >= 3) heatLevel = 'Medium';
+  else heatLevel = 'Low';
+  await setDoc(hotspotRef, {
+    coordinates: new GeoPoint(latitude, longitude),
+    heatLevel,
+    reportCount: newCount,
+    lastUpdated: Timestamp.now(),
+    gridId,
+    radius: 500,
+    animalType,
+    county: county || null,
+  }, { merge: true });
+  return { gridId, heatLevel, reportCount: newCount, county, animalType };
+};
 export const checkNearbyHotspots = async (
   latitude: number,
   longitude: number,
@@ -250,6 +287,13 @@ export const checkNearbyHotspots = async (
     >(functions, 'checkHotspots');
     try {
       const result = await checkHotspotsFunction({ latitude, longitude });
+      // Ensure animalType is present in all returned hotspots
+      if (result.data && Array.isArray(result.data.hotspots)) {
+        result.data.hotspots = result.data.hotspots.map(h => ({
+          ...h,
+          animalType: h.animalType || '',
+        }));
+      }
       return result.data;
     } catch (err: any) {
       if (err?.code === 'functions/not-found') {
@@ -387,5 +431,6 @@ export const hotspotToFirebaseHotspot = (
     lastUpdated: Timestamp.fromMillis(hotspot.lastUpdated),
     gridId: hotspot.gridId,
     radius: hotspot.radius,
+    animalType: (hotspot as any).animalType || '', // Only add if present
   };
 };

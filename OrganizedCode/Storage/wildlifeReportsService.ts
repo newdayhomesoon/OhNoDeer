@@ -13,6 +13,7 @@ import {
   FirebaseHotspot,
   FirebaseUserProfile,
   firebaseHotspotToHotspot,
+  createOrUpdateHotspot,
 } from './firebase/service';
 import {
   SightingReport,
@@ -82,11 +83,26 @@ export const WildlifeReportsService = {
         },
         animalCount,
       );
-      
-      console.log('[DEBUG] WildlifeReportsService.submitReport - addWildlifeReport returned:', reportId);
-      console.log('[DEBUG] WildlifeReportsService.submitReport - Report ID type:', typeof reportId);
-      console.log('[DEBUG] WildlifeReportsService.submitReport - Report ID truthy:', !!reportId);
-      
+      // Create or update hotspot after report
+      if (reportId) {
+        // Get county using reverse geocode API
+        let county: string | null = null;
+        try {
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`);
+          const data = await res.json();
+          county = data.address?.county || null;
+        } catch (e) {
+          county = null;
+        }
+        const hotspotResult = await createOrUpdateHotspot(
+          location.latitude,
+          location.longitude,
+          animalType,
+          animalCount,
+          county
+        );
+        console.log('[DEBUG] Hotspot created/updated:', hotspotResult);
+      }
       return reportId;
     } catch (error) {
       console.error('[DEBUG] WildlifeReportsService.submitReport - Error submitting wildlife report:', error);

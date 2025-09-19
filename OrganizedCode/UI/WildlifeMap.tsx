@@ -22,6 +22,7 @@ interface WildlifeMapProps {
 
 const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpdate, showLegend = true}) => {
   const [hotspots, setHotspots] = useState<FirebaseHotspot[]>([]);
+  const [county, setCounty] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState<Region>({
     latitude: 37.78825,
     longitude: -122.4324,
@@ -65,14 +66,30 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       });
-      loadHotspots(currentLocation.latitude, currentLocation.longitude);
+      // Get county from location (simple reverse geocode using a public API)
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${currentLocation.latitude}&lon=${currentLocation.longitude}`)
+        .then(res => res.json())
+        .then(data => {
+          const countyName = data.address?.county || null;
+          setCounty(countyName);
+          loadHotspots(currentLocation.latitude, currentLocation.longitude);
+        })
+        .catch(() => {
+          setCounty(null);
+          loadHotspots(currentLocation.latitude, currentLocation.longitude);
+        });
     }
   }, [currentLocation]);
 
   const loadHotspots = async (latitude: number, longitude: number) => {
     try {
       const result = await checkNearbyHotspots(latitude, longitude);
-      setHotspots(result.hotspots);
+      // Filter hotspots by county if available
+      let filteredHotspots = result.hotspots;
+      if (county) {
+        filteredHotspots = filteredHotspots.filter(h => h.county && h.county === county);
+      }
+      setHotspots(filteredHotspots);
     } catch (error) {
       console.error('Error loading hotspots:', error);
       Alert.alert('Error', 'Failed to load wildlife hotspots');
@@ -124,47 +141,6 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
             strokeWidth={2}
           />
         )}
-
-        {hotspots.map((hotspot, index) => (
-          <Circle
-            key={`${hotspot.gridId}_${index}`}
-            center={{
-              latitude: hotspot.coordinates.latitude,
-              longitude: hotspot.coordinates.longitude,
-            }}
-            radius={500}
-            fillColor={getHeatColor(hotspot.heatLevel)}
-            strokeColor={getHeatBorderColor(hotspot.heatLevel)}
-            strokeWidth={2}
-          />
-        ))}
-
-        {hotspots.length === 0 && (
-          <Marker
-            coordinate={{
-              latitude: mapRegion.latitude,
-              longitude: mapRegion.longitude,
-            }}
-            title="Map Active"
-            description="Placeholder marker (no hotspots)"
-            pinColor="blue"
-          />
-        )}
-
-        {hotspots
-          .filter(h => h.heatLevel === 'High')
-          .map((hotspot, index) => (
-            <Marker
-              key={`marker_${hotspot.gridId}_${index}`}
-              coordinate={{
-                latitude: hotspot.coordinates.latitude,
-                longitude: hotspot.coordinates.longitude,
-              }}
-              title={'High Activity Area'}
-              description={`${hotspot.reportCount} recent reports`}
-              pinColor="red"
-            />
-          ))}
       </MapView>
 
       {!mapReady && (

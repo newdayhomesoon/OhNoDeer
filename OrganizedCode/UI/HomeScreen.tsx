@@ -470,72 +470,36 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     animalType: AnimalType,
     quantity: number,
   ) => {
-    console.log('[DEBUG] handleSaveSighting called with:', animalType, quantity);
-    
-    // Check authentication first
-    const user = getCurrentUser();
-    console.log('[DEBUG] Current user for sighting:', user?.uid, user?.email, user?.isAnonymous);
-    
-    if (!user) {
-      console.log('[DEBUG] No authenticated user, cannot save sighting');
-      Alert.alert(
-        'Authentication Required',
-        'You must be logged in to report sightings. Please log in and try again.',
-      );
-      return;
-    }
-
-    if (!currentLocation) {
-      console.log('[DEBUG] No current location available');
-      Alert.alert(
-        'Location Error',
-        'Unable to get your current location. Please ensure location services are enabled and try again.',
-      );
-      return;
-    }
-
-    console.log('[DEBUG] All checks passed, submitting report...');
-
+    // ...existing code...
     try {
-      console.log('[DEBUG] Submitting report to WildlifeReportsService...');
-
-      // Convert LocationData to Location format expected by the service
-      const locationForReport: Location = {
+      // Prepare location data for the report
+      if (!currentLocation) {
+        Alert.alert('Location Error', 'Unable to get your current location. Please ensure location services are enabled and try again.');
+        return;
+      }
+      const locationForReport = {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
         accuracy: currentLocation.accuracy,
       };
-
-      console.log('[DEBUG] Location for report:', locationForReport);
-
+      console.log('[DEBUG] Submitting report:', { animalType, locationForReport, quantity });
       const reportId = await WildlifeReportsService.submitReport(
         animalType,
         locationForReport,
         quantity,
       );
-      console.log('[DEBUG] Report submitted with ID:', reportId);
-
+      console.log('[DEBUG] Report ID returned:', reportId);
       if (reportId) {
-        Alert.alert(
-          'Success',
-          `Reported ${quantity} ${animalType}${
-            quantity > 1 ? 's' : ''
-          } sighted!`,
-        );
-
-        // Always reload sightings after submission
-        console.log('[DEBUG] Reloading sightings after submission...');
+        // Reload sightings and counters from backend to ensure UI/profile are up to date
         await loadRecentSightings();
-
-        // Switch to 'View Recent Sightings' tab so user sees update
+        console.log('[DEBUG] Sightings and counters reloaded after report');
         setActiveTab('sightings');
       } else {
-        console.log('[DEBUG] Report submission returned null ID');
-        Alert.alert('Error', 'Failed to save sighting. Please try again.');
+        console.log('[DEBUG] Report submission failed, no ID returned');
       }
+      // ...existing code...
     } catch (error) {
-      console.error('[DEBUG] Error in handleSaveSighting:', error);
-      Alert.alert('Error', 'Failed to save sighting. Please try again.');
+      // ...existing code...
     }
   };
 
