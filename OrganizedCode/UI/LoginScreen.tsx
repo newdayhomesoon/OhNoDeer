@@ -277,7 +277,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
             onPress={() => throttle(handleAppleLogin)}
             disabled={loading}>
             <Image
-              source={require('../../assets/apple-logo.png')}
+              source={require('../../assets/Apple-logo.png')}
               style={{ width: 24, height: 24, marginRight: theme.spacing.s, tintColor: '#fff' }}
               resizeMode="contain"
             />
