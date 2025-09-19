@@ -1,4 +1,4 @@
-import PushNotification from 'react-native-push-notification';
+import PushNotification, {ReceivedNotification} from 'react-native-push-notification';
 import Sound from 'react-native-sound';
 import Tts from 'react-native-tts';
 import {Platform, PermissionsAndroid, AppState} from 'react-native';
@@ -12,7 +12,7 @@ class SimpleBackgroundService {
   private alertSound: Sound | null = null;
   private userIsPro = false;
   private locationWatchId: number | null = null;
-  private appStateSubscription: any = null;
+  private appStateSubscription: ReturnType<typeof AppState.addEventListener> | null = null;
   private currentLocation: SimpleLocation | null = null;
   private geofenceCheckInterval: number | null = null;
 
@@ -129,7 +129,7 @@ class SimpleBackgroundService {
       onRegister: (token: {os: string; token: string}) => {
         console.log('Push notification token:', token);
       },
-      onNotification: (notification: any) => {
+      onNotification: (notification: ReceivedNotification & {finish?: () => void}) => {
         console.log('Notification received:', notification);
         if (notification.finish) {
           notification.finish();
@@ -223,7 +223,7 @@ class SimpleBackgroundService {
       if (this.currentLocation) {
         this.checkNearbyHotspots(this.currentLocation);
       }
-    }, 120000) as any; // 2 minutes
+    }, 120000) as unknown as number; // 2 minutes
   }
 
   private stopGeofenceMonitoring() {

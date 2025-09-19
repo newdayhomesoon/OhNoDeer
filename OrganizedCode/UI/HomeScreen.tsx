@@ -425,7 +425,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       };
       sightings.forEach(sighting => {
         console.log('[DEBUG] Processing sighting for counters:', sighting.type, sighting.quantity);
-        if (counters.hasOwnProperty(sighting.type)) {
+        if (sighting.type in counters) {
           counters[sighting.type] += sighting.quantity;
         }
       });
@@ -692,7 +692,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                       onPress={async () => {
                         console.log('[DEBUG] Debug button pressed - checking Firestore data');
                         try {
-                          const { collection, query, where, getDocs, orderBy, limit } = await import('../Storage/firebase/service');
+                          const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
                           const user = getCurrentUser();
                           
                           if (!user) {
@@ -717,7 +717,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           console.log('[DEBUG] - Query snapshot size:', querySnapshot.size);
                           console.log('[DEBUG] - Query snapshot empty:', querySnapshot.empty);
                           
-                          const docs = [];
+                          const docs: Array<{id: string; data: any}> = [];
                           querySnapshot.forEach((doc) => {
                             console.log('[DEBUG] Document ID:', doc.id);
                             console.log('[DEBUG] Document data:', doc.data());
@@ -730,7 +730,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           );
                         } catch (error) {
                           console.error('[DEBUG] Error querying Firestore directly:', error);
-                          Alert.alert('Error', `Failed to query Firestore: ${error.message}`);
+                          Alert.alert('Error', `Failed to query Firestore: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         }
                       }}>
                       <Text style={styles.debugButtonText}>Debug Firestore</Text>
@@ -1310,7 +1310,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
         <QuantityUpdateModal
           visible={showQuantityUpdateModal}
-          animalType="wildlife"
+          animalType={selectedAnimal || 'deer'}
           onConfirm={handleQuantityUpdate}
           onSkip={handleSkipQuantityUpdate}
         />
