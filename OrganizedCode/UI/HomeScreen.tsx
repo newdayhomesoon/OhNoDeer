@@ -284,24 +284,21 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   // Load user profile when authentication state changes
   useEffect(() => {
-    const loadUserProfile = async (user: any) => {
+    const loadUserProfile = async () => {
+      const user = getCurrentUser();
       console.log('loadUserProfile called with user:', user?.uid);
       if (user) {
         try {
-          // Load user profile from Firestore
+          // Load user profile from Firestore using UID
           const profile = await WildlifeReportsService.getUserProfile(user.uid);
           console.log('User profile loaded:', profile);
-          
           if (profile) {
-            // Update user info with actual profile data
             setUserName(user.displayName || user.email?.split('@')[0] || 'User');
             setUserEmail(user.email || profile.email || 'No email');
           } else {
-            // Fallback to Firebase Auth user data
             setUserName(user.displayName || user.email?.split('@')[0] || 'User');
             setUserEmail(user.email || 'No email');
           }
-
           // Load sightings after user is authenticated
           console.log('Loading sightings after auth...');
           if (activeTab === 'sightings') {
@@ -309,25 +306,21 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           }
         } catch (error) {
           console.warn('Failed to load user profile:', error);
-          // Fallback to Firebase Auth user data
           setUserName(user.displayName || user.email?.split('@')[0] || 'User');
           setUserEmail(user.email || 'No email');
         }
       } else {
         console.log('No user, clearing data');
-        // Reset to default values when logged out
         setUserName('Guest');
         setUserEmail('guest@example.com');
-        setRecentSightings([]); // Clear sightings when logged out
+        setRecentSightings([]);
       }
     };
 
     // Listen for authentication state changes
-    const unsubscribe = onAuthStateChange((user) => {
-      console.log('Auth state changed - User:', user?.uid, user?.email);
-      loadUserProfile(user);
+    const unsubscribe = onAuthStateChange(() => {
+      loadUserProfile();
     });
-    
     return unsubscribe;
   }, [activeTab]);
 

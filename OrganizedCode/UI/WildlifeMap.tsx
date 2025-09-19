@@ -141,6 +141,7 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
             strokeWidth={2}
           />
         )}
+        {/* Removed user location Marker to prevent overlap with Circle */}
       </MapView>
 
       {!mapReady && (
