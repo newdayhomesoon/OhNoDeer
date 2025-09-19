@@ -284,30 +284,29 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   // Load user profile when authentication state changes
   useEffect(() => {
-    const loadUserProfile = async () => {
-      const user = getCurrentUser();
+    const loadUserProfile = async (user?: any) => {
       console.log('loadUserProfile called with user:', user?.uid);
-      if (user) {
+      const currentUser = user || getCurrentUser();
+      console.log('Current user for profile load:', currentUser?.uid, currentUser?.email, currentUser?.isAnonymous);
+      if (currentUser) {
         try {
           // Load user profile from Firestore using UID
-          const profile = await WildlifeReportsService.getUserProfile(user.uid);
+          const profile = await WildlifeReportsService.getUserProfile(currentUser.uid);
           console.log('User profile loaded:', profile);
           if (profile) {
-            setUserName(user.displayName || user.email?.split('@')[0] || 'User');
-            setUserEmail(user.email || profile.email || 'No email');
+            setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || 'User');
+            setUserEmail(currentUser.email || profile.email || 'No email');
           } else {
-            setUserName(user.displayName || user.email?.split('@')[0] || 'User');
-            setUserEmail(user.email || 'No email');
+            setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || 'User');
+            setUserEmail(currentUser.email || 'No email');
           }
           // Load sightings after user is authenticated
           console.log('Loading sightings after auth...');
-          if (activeTab === 'sightings') {
-            await loadRecentSightings();
-          }
+          await loadRecentSightings();
         } catch (error) {
           console.warn('Failed to load user profile:', error);
-          setUserName(user.displayName || user.email?.split('@')[0] || 'User');
-          setUserEmail(user.email || 'No email');
+          setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || 'User');
+          setUserEmail(currentUser.email || 'No email');
         }
       } else {
         console.log('No user, clearing data');
@@ -318,8 +317,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     };
 
     // Listen for authentication state changes
-    const unsubscribe = onAuthStateChange(() => {
-      loadUserProfile();
+    const unsubscribe = onAuthStateChange((user) => {
+      console.log('Auth state changed - User:', user?.uid, user?.email, user?.isAnonymous);
+      loadUserProfile(user);
     });
     return unsubscribe;
   }, [activeTab]);
@@ -661,6 +661,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                             timestamp: Date.now()
                           };
                           
+                          console.log('[DEBUG] Creating test sighting with location:', testLocation);
                           const reportId = await WildlifeReportsService.submitReport(
                             'deer',
                             {
@@ -674,14 +675,65 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           console.log('[DEBUG] Test sighting created with ID:', reportId);
                           Alert.alert('Test Sighting Created', `Report ID: ${reportId}`);
                           
-                          // Reload sightings
-                          await loadRecentSightings();
+                          // Wait a moment for Firestore to propagate
+                          setTimeout(async () => {
+                            console.log('[DEBUG] Reloading sightings after test creation...');
+                            await loadRecentSightings();
+                          }, 2000);
                         } catch (error) {
                           console.error('[DEBUG] Error creating test sighting:', error);
                           Alert.alert('Error', 'Failed to create test sighting');
                         }
                       }}>
                       <Text style={styles.debugButtonText}>Create Test Sighting</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.debugButton}
+                      onPress={async () => {
+                        console.log('[DEBUG] Debug button pressed - checking Firestore data');
+                        try {
+                          const { collection, query, where, getDocs, orderBy, limit } = await import('../Storage/firebase/service');
+                          const user = getCurrentUser();
+                          
+                          if (!user) {
+                            Alert.alert('Error', 'No authenticated user');
+                            return;
+                          }
+                          
+                          console.log('[DEBUG] Querying Firestore directly for user:', user.uid);
+                          
+                          // Import the db instance
+                          const { db } = await import('../Storage/firebase/service');
+                          
+                          const q = query(
+                            collection(db, 'wildlife_reports'),
+                            where('userId', '==', user.uid),
+                            orderBy('timestamp', 'desc'),
+                            limit(10)
+                          );
+                          
+                          const querySnapshot = await getDocs(q);
+                          console.log('[DEBUG] Direct Firestore query result:');
+                          console.log('[DEBUG] - Query snapshot size:', querySnapshot.size);
+                          console.log('[DEBUG] - Query snapshot empty:', querySnapshot.empty);
+                          
+                          const docs = [];
+                          querySnapshot.forEach((doc) => {
+                            console.log('[DEBUG] Document ID:', doc.id);
+                            console.log('[DEBUG] Document data:', doc.data());
+                            docs.push({ id: doc.id, data: doc.data() });
+                          });
+                          
+                          Alert.alert(
+                            'Firestore Debug',
+                            `Found ${docs.length} documents\nUser ID: ${user.uid.substring(0, 8)}...`
+                          );
+                        } catch (error) {
+                          console.error('[DEBUG] Error querying Firestore directly:', error);
+                          Alert.alert('Error', `Failed to query Firestore: ${error.message}`);
+                        }
+                      }}>
+                      <Text style={styles.debugButtonText}>Debug Firestore</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
