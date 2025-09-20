@@ -103,6 +103,8 @@ export const auth = (() => {
   const authInstance = getAuth(requireApp());
   console.log('[DEBUG] Setting auth persistence to getReactNativePersistence...');
   // Set persistence to AsyncStorage for React Native compatibility
+  // Note: setPersistence is async and should be awaited, but since this is a module-level
+  // initialization, we'll set it and handle any errors
   setPersistence(authInstance, getReactNativePersistence(AsyncStorage)).catch((error) => {
     console.warn('[DEBUG] Failed to set auth persistence:', error);
   });
@@ -153,6 +155,16 @@ export const functions = (() => getFunctions(requireApp(), FUNCTIONS_REGION))();
 export const signInUser = async (): Promise<User | null> => {
   try {
     console.log('[DEBUG] signInUser - Starting anonymous sign in...');
+
+    // Ensure persistence is set before signing in
+    console.log('[DEBUG] signInUser - Ensuring auth persistence is set...');
+    try {
+      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
+      console.log('[DEBUG] signInUser - Auth persistence confirmed');
+    } catch (persistenceError) {
+      console.warn('[DEBUG] signInUser - Could not set persistence, continuing anyway:', persistenceError);
+    }
+
     const result = await signInAnonymously(auth);
     console.log('[DEBUG] signInUser - Anonymous sign in successful, user:', result.user.uid);
     console.log('[DEBUG] signInUser - User details:', {

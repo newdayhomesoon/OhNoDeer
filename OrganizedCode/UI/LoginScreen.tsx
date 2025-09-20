@@ -23,8 +23,12 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
+  setPersistence,
 } from 'firebase/auth';
+import { getReactNativePersistence } from 'firebase/auth/react-native';
 import {auth, createUserProfile} from '../Storage/firebase/service';
+import {AuthService} from '../Storage/wildlifeReportsService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../src/app-theme';
 
 type LoginScreenProps = {
@@ -68,10 +72,13 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
     setShowGuestModal(false);
     setLoading(true);
     try {
-      // Sign in anonymously with Firebase
-  const userCredential = await signInAnonymously(auth);
-      await createUserProfile(userCredential.user.uid, 'guest');
-      onLogin();
+      // Sign in anonymously using the service (ensures persistence is set)
+      const success = await AuthService.signInAnonymously();
+      if (success) {
+        onLogin();
+      } else {
+        Alert.alert('Error', 'Failed to sign in. Please try again.');
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to sign in. Please try again.');
     } finally {
@@ -93,6 +100,9 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
 
       // Create Firebase credential
       const googleCredential = GoogleAuthProvider.credential(idToken);
+
+      // Ensure persistence is set before signing in
+      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
 
       // Sign in to Firebase
       const result = await signInWithCredential(auth, googleCredential);
@@ -132,6 +142,9 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
         idToken: identityToken, // identityToken is non-null after guard
         rawNonce: nonce || undefined,
       });
+
+      // Ensure persistence is set before signing in
+      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
 
       // Sign in to Firebase
       const result = await signInWithCredential(auth, appleCredential);
@@ -189,6 +202,9 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
     }
     setLoading(true);
     try {
+      // Ensure persistence is set before signing in
+      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
+
       let userCred;
       if (emailMode === 'login') {
         try {

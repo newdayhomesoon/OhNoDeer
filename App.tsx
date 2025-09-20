@@ -17,12 +17,16 @@ function App(): JSX.Element {
   const [initializing, setInitializing] = useState(true);
 
   useEffect(() => {
+    console.log('[DEBUG] App - Setting up auth state listener');
     // Listen to authentication state changes
     const unsubscribe = AuthService.onAuthStateChange((user) => {
+      console.log('[DEBUG] App - Auth state changed, user:', user?.uid, 'isAnonymous:', user?.isAnonymous);
       const isLoggedIn = !!user;
+      console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn);
       setLoggedIn(isLoggedIn);
-      
+
       if (initializing) {
+        console.log('[DEBUG] App - Setting initializing to false');
         setInitializing(false);
       }
     });
