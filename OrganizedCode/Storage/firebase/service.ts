@@ -4,9 +4,9 @@ import {
   signInAnonymously,
   onAuthStateChanged,
   setPersistence,
-  indexedDBLocalPersistence,
   User,
 } from 'firebase/auth';
+import { getReactNativePersistence } from 'firebase/auth/react-native';
 import {
   getFirestore,
   collection,
@@ -101,9 +101,9 @@ function requireApp(): ReturnType<typeof initializeApp> {
 export const auth = (() => {
   console.log('[DEBUG] Initializing Firebase auth...');
   const authInstance = getAuth(requireApp());
-  console.log('[DEBUG] Setting auth persistence to indexedDBLocalPersistence...');
-  // Set persistence to IndexedDB for React Native compatibility
-  setPersistence(authInstance, indexedDBLocalPersistence).catch((error) => {
+  console.log('[DEBUG] Setting auth persistence to getReactNativePersistence...');
+  // Set persistence to AsyncStorage for React Native compatibility
+  setPersistence(authInstance, getReactNativePersistence(AsyncStorage)).catch((error) => {
     console.warn('[DEBUG] Failed to set auth persistence:', error);
   });
   console.log('[DEBUG] Firebase auth initialized successfully');

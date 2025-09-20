@@ -559,9 +559,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   const handleLogout = async () => {
     try {
-      // Clear stored authentication state
-      await AsyncStorage.removeItem('authState');
-      
       // Sign out from Firebase
       await auth.signOut();
       
