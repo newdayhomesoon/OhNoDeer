@@ -401,8 +401,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         return;
       }
 
-      console.log('[DEBUG] User authenticated, fetching user reports...');
-      const sightings = await WildlifeReportsService.getUserReports(20);
+      console.log('[DEBUG] User authenticated, fetching recent sightings from all users...');
+      const sightings = await WildlifeReportsService.getRecentSightings(12, currentLocation ? {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        accuracy: currentLocation.accuracy,
+      } : undefined);
       console.log('[DEBUG] Raw sightings data from service:', sightings);
       console.log('[DEBUG] Number of sightings loaded:', sightings.length);
       
@@ -421,7 +425,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       setRecentSightings(sightings);
       console.log('[DEBUG] Recent sightings state updated:', sightings);
       
-      // Calculate animal counters
+      // Calculate animal counters based on user's own reports
+      const userSightings = await WildlifeReportsService.getUserReports(50);
       const counters = { 
         deer: 0, 
         bear: 0, 
@@ -430,7 +435,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         rabbit: 0, 
         small_mammals: 0 
       };
-      sightings.forEach(sighting => {
+      userSightings.forEach(sighting => {
         console.log('[DEBUG] Processing sighting for counters:', sighting.type, sighting.quantity);
         if (sighting.type in counters) {
           counters[sighting.type] += sighting.quantity;
@@ -579,6 +584,35 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     return new Date(timestamp).toLocaleString();
   };
 
+  const formatLocation = (latitude: number, longitude: number) => {
+    // Convert coordinates to approximate street address format
+    const lat = Math.abs(latitude);
+    const lng = Math.abs(longitude);
+    
+    // Simple approximation: round to nearest 0.1 degree and create street-like name
+    const latStreet = Math.round(lat * 10) / 10;
+    const lngStreet = Math.round(lng * 10) / 10;
+    
+    // Create a simple street name based on coordinates
+    const directions = [
+      latitude >= 0 ? 'N' : 'S',
+      longitude >= 0 ? 'E' : 'W'
+    ];
+    
+    return `${directions[0]}${latStreet} ${directions[1]}${lngStreet} St`;
+  };
+
+  const formatDateTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    const month = date.getMonth() + 1; // getMonth() returns 0-11
+    const day = date.getDate();
+    const year = date.getFullYear().toString().slice(-2); // Last 2 digits of year
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    
+    return `${month}/${day}/${year} ${hours}:${minutes}`;
+  };
+
   const handleBackToAnimals = () => {
     setShowQuantityModal(false);
     setShowAnimalModal(true);
@@ -647,10 +681,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   {recentSightings.map((sighting, index) => (
                     <View key={index} style={styles.sightingItem}>
                       <Text style={styles.sightingText}>
-                        {sighting.type} - {sighting.quantity} reported
+                        {sighting.type.charAt(0).toUpperCase() + sighting.type.slice(1)}- {sighting.quantity} Reported, {formatLocation(sighting.location.latitude, sighting.location.longitude)}
                       </Text>
                       <Text style={styles.sightingDate}>
-                        {new Date(sighting.timestamp).toLocaleDateString()}
+                        {formatDateTime(sighting.timestamp)}
                       </Text>
                     </View>
                   ))}
@@ -940,7 +974,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   </View>
                 </View>
               ) : profileInfoTab === 'data' ? (
-                <View style={styles.profileInfoContent}>
+                <ScrollView style={styles.profileInfoContent} showsVerticalScrollIndicator={false}>
                   <Text style={styles.subSectionTitle}>Animal Sightings</Text>
                   <View style={styles.animalCountersTable}>
                     <View style={styles.counterRow}>
@@ -966,12 +1000,15 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                     {recentSightings.slice(0, 3).map((sighting, index) => (
                       <View key={index} style={styles.recentReportItem}>
                         <Text style={styles.recentReportText}>
-                          {sighting.type} sighting - {Math.floor((Date.now() - sighting.timestamp) / (1000 * 60 * 60 * 24))} days ago
+                          {sighting.type.charAt(0).toUpperCase() + sighting.type.slice(1)}- {sighting.quantity} Reported, {formatLocation(sighting.location.latitude, sighting.location.longitude)}
+                        </Text>
+                        <Text style={styles.recentReportDate}>
+                          {formatDateTime(sighting.timestamp)}
                         </Text>
                       </View>
                     ))}
                   </View>
-                </View>
+                </ScrollView>
               ) : (
                 <View style={styles.profileInfoContent}>
                   <TouchableOpacity
@@ -2041,6 +2078,12 @@ const styles = StyleSheet.create({
     color: theme.colors.textPrimary,
     fontSize: theme.fontSize.caption,
     fontFamily: theme.fontFamily.openSans,
+  },
+  recentReportDate: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.caption,
+    fontFamily: theme.fontFamily.openSans,
+    marginTop: 4,
   },
   securityButton: {
     backgroundColor: '#4a5568',

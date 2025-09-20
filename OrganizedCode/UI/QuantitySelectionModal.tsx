@@ -84,21 +84,9 @@ const animalLabel = (animal: AnimalType): string => {
                   {Array(quantity)
                     .fill(0)
                     .map((_, i) => (
-                      <Image
-                        key={i}
-                        source={{
-                          uri: `data:image/svg+xml;base64,${Buffer.from(
-                            `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-                            <text x="12" y="16" font-size="14" text-anchor="middle">${getAnimalEmoji(
-                              animalType,
-                            )}</text>
-                          </svg>`,
-                            'utf8',
-                          ).toString('base64')}`,
-                        }}
-                        style={styles.animalImage}
-                        resizeMode="contain"
-                      />
+                      <Text key={i} style={styles.animalEmoji}>
+                        {getAnimalEmoji(animalType)}
+                      </Text>
                     ))}
                 </View>
                 <Text style={styles.quantityText}>
@@ -197,6 +185,10 @@ const styles = StyleSheet.create({
   animalImage: {
     width: 30,
     height: 30,
+    margin: theme.spacing.s,
+  },
+  animalEmoji: {
+    fontSize: 30,
     margin: theme.spacing.s,
   },
   manyText: {

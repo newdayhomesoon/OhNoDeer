@@ -1,6 +1,7 @@
 import {
   addWildlifeReport,
   getUserReports,
+  getRecentSightings,
   checkNearbyHotspots,
   triggerHotspotUpdate,
   signInUser,
@@ -133,6 +134,42 @@ export const WildlifeReportsService = {
       return appReports;
     } catch (error) {
       console.error('[DEBUG] WildlifeReportsService.getUserReports - Error getting user reports:', error);
+      return [];
+    }
+  },
+
+  // Get recent sightings from all users in the last X hours
+  async getRecentSightings(hoursBack: number = 12, currentLocation?: Location): Promise<SightingReport[]> {
+    try {
+      console.log('[DEBUG] WildlifeReportsService.getRecentSightings called with hoursBack:', hoursBack);
+      
+      console.log('[DEBUG] WildlifeReportsService - Calling Firebase getRecentSightings');
+      const firebaseReports = await getRecentSightings(hoursBack);
+      console.log('[DEBUG] WildlifeReportsService - Firebase recent reports received:', firebaseReports.length);
+      
+      let appReports = firebaseReports.map(firebaseToAppReport);
+      
+      // If location is provided, filter by distance (approximate 10km radius)
+      if (currentLocation) {
+        console.log('[DEBUG] WildlifeReportsService - Filtering by location:', currentLocation);
+        appReports = appReports.filter(report => {
+          const distance = Math.sqrt(
+            Math.pow(report.location.latitude - currentLocation.latitude, 2) +
+            Math.pow(report.location.longitude - currentLocation.longitude, 2)
+          );
+          // Rough approximation: ~0.1 degrees ≈ 11km, so 0.09 ≈ 10km
+          return distance <= 0.09;
+        });
+        console.log('[DEBUG] WildlifeReportsService - Reports after location filtering:', appReports.length);
+      }
+      
+      // Sort by timestamp (most recent first)
+      appReports = appReports.sort((a, b) => b.timestamp - a.timestamp);
+      
+      console.log('[DEBUG] WildlifeReportsService - Final recent sightings:', appReports.length);
+      return appReports.slice(0, 20); // Limit to 20 most recent
+    } catch (error) {
+      console.error('[DEBUG] WildlifeReportsService.getRecentSightings - Error getting recent sightings:', error);
       return [];
     }
   },

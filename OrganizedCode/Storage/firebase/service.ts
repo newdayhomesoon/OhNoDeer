@@ -270,6 +270,44 @@ export const getUserReports = async (
   }
 };
 
+export const getRecentSightings = async (
+  hoursBack: number = 12,
+): Promise<WildlifeReport[]> => {
+  try {
+    console.log('[DEBUG] Firebase.getRecentSightings - Getting sightings from last', hoursBack, 'hours');
+    
+    // Calculate timestamp for X hours ago
+    const hoursAgo = new Date();
+    hoursAgo.setHours(hoursAgo.getHours() - hoursBack);
+    const timestampLimit = Timestamp.fromDate(hoursAgo);
+    
+    console.log('[DEBUG] Firebase.getRecentSightings - Timestamp limit:', timestampLimit.toDate());
+    
+    const q = query(
+      collection(db, 'wildlife_reports'),
+      where('timestamp', '>=', timestampLimit),
+      orderBy('timestamp', 'desc'),
+      limit(100), // Get more to allow for location filtering
+    );
+
+    console.log('[DEBUG] Firebase.getRecentSightings - Executing query...');
+    const querySnapshot = await getDocs(q);
+    console.log('[DEBUG] Firebase.getRecentSightings - Query completed. Snapshot size:', querySnapshot.size);
+    
+    const reports = querySnapshot.docs.map((doc: any) => {
+      const data = doc.data() as WildlifeReport;
+      return data;
+    });
+    
+    console.log('[DEBUG] Firebase.getRecentSightings - Total recent reports found:', reports.length);
+    return reports;
+  } catch (error) {
+    console.error('[DEBUG] Firebase.getRecentSightings - Error getting recent sightings:', error);
+    console.error('[DEBUG] Firebase.getRecentSightings - Error details:', error instanceof Error ? error.message : error);
+    return [];
+  }
+};
+
 // Hotspots
 // Create or update a hotspot for a sighting
 export const createOrUpdateHotspot = async (
