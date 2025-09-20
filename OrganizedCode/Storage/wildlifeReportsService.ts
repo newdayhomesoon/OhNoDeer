@@ -2,6 +2,7 @@ import {
   addWildlifeReport,
   getUserReports,
   checkNearbyHotspots,
+  triggerHotspotUpdate,
   signInUser,
   getCurrentUser,
   onAuthStateChange,
@@ -86,26 +87,16 @@ export const WildlifeReportsService = {
 
       console.log('[DEBUG] WildlifeReportsService.submitReport - addWildlifeReport returned:', reportId);
 
-      // Create or update hotspot after report
+      // Trigger real-time hotspot update after successful report submission
       if (reportId) {
-        console.log('[DEBUG] WildlifeReportsService.submitReport - Creating/updating hotspot...');
-        // Get county using reverse geocode API
-        let county: string | null = null;
+        console.log('[DEBUG] WildlifeReportsService.submitReport - Triggering real-time hotspot update...');
         try {
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${location.latitude}&lon=${location.longitude}`);
-          const data = await res.json();
-          county = data.address?.county || null;
-        } catch (e) {
-          county = null;
+          const hotspotUpdateResult = await triggerHotspotUpdate(reportId);
+          console.log('[DEBUG] WildlifeReportsService.submitReport - Hotspot update result:', hotspotUpdateResult);
+        } catch (hotspotError) {
+          console.warn('[DEBUG] WildlifeReportsService.submitReport - Hotspot update failed, but report was successful:', hotspotError);
+          // Don't fail the entire submission if hotspot update fails
         }
-        const hotspotResult = await createOrUpdateHotspot(
-          location.latitude,
-          location.longitude,
-          animalType,
-          animalCount,
-          county
-        );
-        console.log('[DEBUG] WildlifeReportsService.submitReport - Hotspot created/updated:', hotspotResult);
       }
 
       console.log('[DEBUG] WildlifeReportsService.submitReport - Returning reportId:', reportId);

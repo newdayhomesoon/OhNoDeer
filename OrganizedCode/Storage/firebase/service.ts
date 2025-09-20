@@ -339,6 +339,41 @@ export const checkNearbyHotspots = async (
   }
 };
 
+// Trigger real-time hotspot update after report submission
+export const triggerHotspotUpdate = async (
+  reportId?: string,
+): Promise<{success: boolean; hotspotsUpdated: number; message: string}> => {
+  try {
+    const triggerUpdateFunction = httpsCallable<
+      {reportId?: string},
+      {success: boolean; hotspotsUpdated: number; message: string}
+    >(functions, 'triggerHotspotUpdate');
+
+    try {
+      const result = await triggerUpdateFunction({ reportId });
+      console.log('[DEBUG] triggerHotspotUpdate result:', result.data);
+      return result.data;
+    } catch (err: any) {
+      if (err?.code === 'functions/not-found') {
+        console.warn('triggerHotspotUpdate function not deployed yet - hotspots will update hourly');
+        return {
+          success: false,
+          hotspotsUpdated: 0,
+          message: 'Hotspot update function not available - will update hourly'
+        };
+      }
+      throw err;
+    }
+  } catch (error) {
+    console.error('Error triggering hotspot update:', error);
+    return {
+      success: false,
+      hotspotsUpdated: 0,
+      message: 'Failed to trigger hotspot update'
+    };
+  }
+};
+
 // Expose manual triggers for enabling/disabling network if desired later
 export async function markFirestoreOfflineForUI() { setOffline(true); }
 export async function markFirestoreOnlineForUI() { setOffline(false); }

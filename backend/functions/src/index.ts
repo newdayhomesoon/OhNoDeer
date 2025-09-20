@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+import * as functions from 'firebase-functions/v2';
 import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin
@@ -27,34 +27,10 @@ interface Hotspot {
 
 // Grid-based clustering configuration
 const GRID_SIZE_METERS = 1000; // 1km grid cells
-const EARTH_RADIUS_KM = 6371;
 
 // Convert degrees to radians
 function toRadians(degrees: number): number {
   return degrees * (Math.PI / 180);
-}
-
-// Convert radians to degrees
-
-// Calculate distance between two points using Haversine formula
-function calculateDistance(
-  lat1: number,
-  lon1: number,
-  lat2: number,
-  lon2: number,
-): number {
-  const dLat = toRadians(lat2 - lat1);
-  const dLon = toRadians(lon2 - lon1);
-
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(lat1)) *
-      Math.cos(toRadians(lat2)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
-
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return EARTH_RADIUS_KM * c;
 }
 
 // Convert lat/lng to grid coordinates
@@ -88,22 +64,9 @@ function calculateHeatLevel(
   }
 }
 
-/**
- * Firebase Cloud Function: processReports
- *
- * Triggered hourly to process wildlife reports and generate dynamic hotspots.
- * Uses a grid-based clustering algorithm to group reports into non-overlapping clusters.
- *
- * Algorithm Overview:
- * 1. Query all reports from the last 24 hours
- * 2. Group reports into grid cells (1km x 1km)
- * 3. Calculate heat level for each grid cell based on report density and recency
- * 4. Update/create hotspot documents in Firestore
- * 5. Clean up old hotspots (older than 24 hours)
- */
-export const processReports = functions.pubsub
-  .schedule('every 1 hours')
-  .onRun(async () => {
+export const processReports = functions.scheduler.onSchedule(
+  'every 1 hours',
+  async (event): Promise<void> => {
     const functionsLogger = functions.logger;
 
     try {
@@ -121,7 +84,7 @@ export const processReports = functions.pubsub
 
       if (reportsSnapshot.empty) {
         functionsLogger.info('No recent reports found');
-        return null;
+        return;
       }
 
       // Group reports by grid cells
@@ -205,7 +168,7 @@ export const processReports = functions.pubsub
         } hotspots`,
       );
 
-      return null;
+      return;
     } catch (error) {
       functionsLogger.error('Error in processReports function:', error);
       throw error;
@@ -213,66 +176,136 @@ export const processReports = functions.pubsub
   });
 
 /**
- * Firebase Cloud Function: checkHotspots
+ * Firebase Cloud Function: triggerHotspotUpdate
  *
- * Called by the mobile app to retrieve hotspots within a 5-mile radius of the user's location.
- * Uses Firestore's geospatial queries to efficiently find nearby hotspots.
+ * Called immediately after a wildlife report is submitted to update hotspots in real-time.
+ * Uses the same grid-based clustering algorithm as processReports but runs on-demand.
  *
- * @param data - Contains user's latitude and longitude
- * @returns List of hotspots within 5-mile radius
+ * @param data - Contains the new report data (optional, can process all recent reports)
+ * @returns Success confirmation with updated hotspot count
  */
-export const checkHotspots = functions.https.onCall(
-  async (
-    data: {latitude: number; longitude: number},
-    context: functions.https.CallableContext,
-  ) => {
+export const triggerHotspotUpdate = functions.https.onCall(
+  async (request) => {
     // Verify user is authenticated
-    if (!context.auth) {
+    if (!request.auth) {
       throw new functions.https.HttpsError(
         'unauthenticated',
-        'User must be authenticated to check hotspots',
+        'User must be authenticated to trigger hotspot updates',
       );
     }
 
-    const {latitude, longitude} = data;
-
-    if (latitude === undefined || longitude === undefined) {
-      throw new functions.https.HttpsError(
-        'invalid-argument',
-        'Latitude and longitude are required',
-      );
-    }
+    const functionsLogger = functions.logger;
 
     try {
-      // Get all current hotspots
-      const hotspotsSnapshot = await db.collection('hotspots').get();
+      functionsLogger.info('Starting triggerHotspotUpdate function');
 
-      const nearbyHotspots: Hotspot[] = [];
+      // Get all reports from the last 24 hours (same logic as processReports)
+      const twentyFourHoursAgo = admin.firestore.Timestamp.fromDate(
+        new Date(Date.now() - 24 * 60 * 60 * 1000),
+      );
 
-      hotspotsSnapshot.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
-        const hotspot = doc.data() as Hotspot;
-        const distance = calculateDistance(
-          latitude,
-          longitude,
-          hotspot.coordinates.latitude,
-          hotspot.coordinates.longitude,
+      const reportsSnapshot = await db
+        .collection('wildlife_reports')
+        .where('timestamp', '>=', twentyFourHoursAgo)
+        .get();
+
+      if (reportsSnapshot.empty) {
+        functionsLogger.info('No recent reports found for hotspot update');
+        return { success: true, hotspotsUpdated: 0, message: 'No recent reports to process' };
+      }
+
+      // Group reports by grid cells (same logic as processReports)
+      const gridClusters: Record<
+        string,
+        {
+          reports: WildlifeReport[];
+          centerLat: number;
+          centerLng: number;
+          gridId: string;
+        }
+      > = {};
+
+      reportsSnapshot.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
+        const report = doc.data() as WildlifeReport;
+        const {gridLat, gridLng, gridId} = latLngToGrid(
+          report.location.latitude,
+          report.location.longitude,
         );
 
-        // 5 miles = 8.04672 km
-        if (distance <= 8.04672) {
-          nearbyHotspots.push(hotspot);
+        if (!gridClusters[gridId]) {
+          gridClusters[gridId] = {
+            reports: [],
+            centerLat: gridLat,
+            centerLng: gridLng,
+            gridId,
+          };
         }
+
+        gridClusters[gridId].reports.push(report);
       });
 
+      // Process each cluster and update/create hotspots (same logic as processReports)
+      const batch = db.batch();
+      const hotspotsRef = db.collection('hotspots');
+
+      for (const [gridId, cluster] of Object.entries(gridClusters)) {
+        const reportCount = cluster.reports.length;
+
+        // Find the oldest report in this cluster to determine time window
+        const timestamps = cluster.reports.map(r =>
+          r.timestamp.toDate().getTime(),
+        );
+        const oldestTimestamp = Math.min(...timestamps);
+        const hoursSinceOldest =
+          (Date.now() - oldestTimestamp) / (1000 * 60 * 60);
+
+        const heatLevel = calculateHeatLevel(reportCount, hoursSinceOldest);
+
+        const hotspotData: Hotspot = {
+          coordinates: new admin.firestore.GeoPoint(
+            cluster.centerLat,
+            cluster.centerLng,
+          ),
+          heatLevel,
+          reportCount,
+          lastUpdated: admin.firestore.Timestamp.now(),
+          gridId,
+          radius: GRID_SIZE_METERS / 2, // Default radius
+        };
+
+        // Update or create hotspot document
+        const hotspotDocRef = hotspotsRef.doc(gridId);
+        batch.set(hotspotDocRef, hotspotData, {merge: true});
+      }
+
+      // Clean up old hotspots (older than 24 hours)
+      const oldHotspotsQuery = await hotspotsRef
+        .where('lastUpdated', '<', twentyFourHoursAgo)
+        .get();
+
+      oldHotspotsQuery.forEach((doc: admin.firestore.QueryDocumentSnapshot) => {
+        batch.delete(doc.ref);
+      });
+
+      await batch.commit();
+
+      const hotspotsUpdated = Object.keys(gridClusters).length;
+      functionsLogger.info(
+        `Real-time hotspot update: Processed ${reportsSnapshot.size} reports into ${hotspotsUpdated} hotspots`,
+      );
+
       return {
-        hotspots: nearbyHotspots,
-        count: nearbyHotspots.length,
+        success: true,
+        hotspotsUpdated,
+        reportsProcessed: reportsSnapshot.size,
+        message: `Successfully updated ${hotspotsUpdated} hotspots from ${reportsSnapshot.size} recent reports`
       };
+
     } catch (error) {
-      functions.logger.error('Error in checkHotspots function:', error);
+      functionsLogger.error('Error in triggerHotspotUpdate function:', error);
       throw new functions.https.HttpsError(
         'internal',
-        'Failed to retrieve hotspots',
+        'Failed to update hotspots',
       );
     }
   },
