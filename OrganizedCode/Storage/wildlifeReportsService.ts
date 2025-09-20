@@ -83,8 +83,12 @@ export const WildlifeReportsService = {
         },
         animalCount,
       );
+
+      console.log('[DEBUG] WildlifeReportsService.submitReport - addWildlifeReport returned:', reportId);
+
       // Create or update hotspot after report
       if (reportId) {
+        console.log('[DEBUG] WildlifeReportsService.submitReport - Creating/updating hotspot...');
         // Get county using reverse geocode API
         let county: string | null = null;
         try {
@@ -101,8 +105,10 @@ export const WildlifeReportsService = {
           animalCount,
           county
         );
-        console.log('[DEBUG] Hotspot created/updated:', hotspotResult);
+        console.log('[DEBUG] WildlifeReportsService.submitReport - Hotspot created/updated:', hotspotResult);
       }
+
+      console.log('[DEBUG] WildlifeReportsService.submitReport - Returning reportId:', reportId);
       return reportId;
     } catch (error) {
       console.error('[DEBUG] WildlifeReportsService.submitReport - Error submitting wildlife report:', error);

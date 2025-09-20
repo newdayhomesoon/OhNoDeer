@@ -258,6 +258,13 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     }
   }, [activeTab]);
 
+  // Load sightings data when viewing profile data tab
+  useEffect(() => {
+    if (activeTab === 'profile_info' && profileInfoTab === 'data') {
+      loadRecentSightings();
+    }
+  }, [activeTab, profileInfoTab]);
+
   // Load settings from AsyncStorage
   useEffect(() => {
     const loadSettings = async () => {
@@ -463,36 +470,65 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     animalType: AnimalType,
     quantity: number,
   ) => {
-    // ...existing code...
+    console.log('[DEBUG] handleSaveSighting called with:', { animalType, quantity });
+
     try {
       // Prepare location data for the report
       if (!currentLocation) {
+        console.log('[DEBUG] No current location available');
         Alert.alert('Location Error', 'Unable to get your current location. Please ensure location services are enabled and try again.');
         return;
       }
+
       const locationForReport = {
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
         accuracy: currentLocation.accuracy,
       };
+
       console.log('[DEBUG] Submitting report:', { animalType, locationForReport, quantity });
+
+      // Check authentication status
+      const user = getCurrentUser();
+      console.log('[DEBUG] Current user before submission:', {
+        uid: user?.uid,
+        email: user?.email,
+        isAnonymous: user?.isAnonymous,
+        exists: !!user
+      });
+
+      if (!user) {
+        console.log('[DEBUG] No authenticated user, cannot submit report');
+        Alert.alert('Authentication Error', 'You must be logged in to report sightings.');
+        return;
+      }
+
       const reportId = await WildlifeReportsService.submitReport(
         animalType,
         locationForReport,
         quantity,
       );
-      console.log('[DEBUG] Report ID returned:', reportId);
+
+      console.log('[DEBUG] Report submission result:', { reportId });
+
       if (reportId) {
+        console.log('[DEBUG] Report submitted successfully, reloading sightings...');
         // Reload sightings and counters from backend to ensure UI/profile are up to date
         await loadRecentSightings();
         console.log('[DEBUG] Sightings and counters reloaded after report');
         setActiveTab('sightings');
+
+        Alert.alert(
+          'Report Submitted!',
+          `Your ${animalType} sighting has been reported successfully.`,
+        );
       } else {
         console.log('[DEBUG] Report submission failed, no ID returned');
+        Alert.alert('Submission Failed', 'Failed to submit report. Please try again.');
       }
-      // ...existing code...
     } catch (error) {
-      // ...existing code...
+      console.error('[DEBUG] Error in handleSaveSighting:', error);
+      Alert.alert('Error', 'Failed to submit report. Please check your connection and try again.');
     }
   };
 
@@ -652,8 +688,66 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                     <TouchableOpacity
                       style={styles.debugButton}
                       onPress={async () => {
-                        console.log('[DEBUG] Test button pressed - creating test sighting');
+                        console.log('[COMPREHENSIVE TEST] Starting comprehensive sightings flow test...');
+                        
                         try {
+                          // Test 1: Check authentication
+                          console.log('[COMPREHENSIVE TEST] === TEST 1: Authentication Check ===');
+                          const user = getCurrentUser();
+                          console.log('[COMPREHENSIVE TEST] Current user:', {
+                            uid: user?.uid,
+                            email: user?.email,
+                            isAnonymous: user?.isAnonymous,
+                            exists: !!user
+                          });
+                          
+                          if (!user) {
+                            Alert.alert('Test Failed', 'No authenticated user found. Please sign in first.');
+                            return;
+                          }
+                          
+                          // Test 2: Test Firebase service directly
+                          console.log('[COMPREHENSIVE TEST] === TEST 2: Firebase Service Direct Test ===');
+                          const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
+                          const { db } = await import('../Storage/firebase/service');
+                          
+                          const q = query(
+                            collection(db, 'wildlife_reports'),
+                            where('userId', '==', user.uid),
+                            orderBy('timestamp', 'desc'),
+                            limit(10)
+                          );
+                          
+                          const querySnapshot = await getDocs(q);
+                          console.log('[COMPREHENSIVE TEST] Firebase direct query results:', {
+                            size: querySnapshot.size,
+                            empty: querySnapshot.empty
+                          });
+                          
+                          const firebaseDocs: Array<{id: string; data: any}> = [];
+                          querySnapshot.forEach((doc) => {
+                            firebaseDocs.push({ id: doc.id, data: doc.data() });
+                          });
+                          console.log('[COMPREHENSIVE TEST] Firebase documents:', firebaseDocs);
+                          
+                          // Test 3: Test WildlifeReportsService
+                          console.log('[COMPREHENSIVE TEST] === TEST 3: WildlifeReportsService Test ===');
+                          const serviceReports = await WildlifeReportsService.getUserReports(20);
+                          console.log('[COMPREHENSIVE TEST] WildlifeReportsService results:', {
+                            length: serviceReports.length,
+                            reports: serviceReports
+                          });
+                          
+                          // Test 4: Test HomeScreen state
+                          console.log('[COMPREHENSIVE TEST] === TEST 4: HomeScreen State Test ===');
+                          console.log('[COMPREHENSIVE TEST] Current HomeScreen state:', {
+                            recentSightingsLength: recentSightings.length,
+                            animalCounters,
+                            activeTab
+                          });
+                          
+                          // Test 5: Create a test sighting
+                          console.log('[COMPREHENSIVE TEST] === TEST 5: Create Test Sighting ===');
                           const testLocation = currentLocation || {
                             latitude: 40.7128,
                             longitude: -74.0060,
@@ -661,8 +755,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                             timestamp: Date.now()
                           };
                           
-                          console.log('[DEBUG] Creating test sighting with location:', testLocation);
-                          const reportId = await WildlifeReportsService.submitReport(
+                          console.log('[COMPREHENSIVE TEST] Creating test sighting with location:', testLocation);
+                          const testReportId = await WildlifeReportsService.submitReport(
                             'deer',
                             {
                               latitude: testLocation.latitude,
@@ -672,20 +766,60 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                             1
                           );
                           
-                          console.log('[DEBUG] Test sighting created with ID:', reportId);
-                          Alert.alert('Test Sighting Created', `Report ID: ${reportId}`);
+                          console.log('[COMPREHENSIVE TEST] Test sighting created with ID:', testReportId);
                           
-                          // Wait a moment for Firestore to propagate
-                          setTimeout(async () => {
-                            console.log('[DEBUG] Reloading sightings after test creation...');
-                            await loadRecentSightings();
-                          }, 2000);
+                          // Wait for Firestore to propagate
+                          console.log('[COMPREHENSIVE TEST] Waiting 3 seconds for Firestore propagation...');
+                          await new Promise(resolve => setTimeout(resolve, 3000));
+                          
+                          // Test 6: Re-query after test sighting
+                          console.log('[COMPREHENSIVE TEST] === TEST 6: Re-query After Test Sighting ===');
+                          const updatedReports = await WildlifeReportsService.getUserReports(20);
+                          console.log('[COMPREHENSIVE TEST] Updated reports after test:', {
+                            length: updatedReports.length,
+                            reports: updatedReports
+                          });
+                          
+                          // Test 7: Update HomeScreen state
+                          console.log('[COMPREHENSIVE TEST] === TEST 7: Update HomeScreen State ===');
+                          setRecentSightings(updatedReports);
+                          
+                          // Recalculate counters
+                          const updatedCounters = { deer: 0, bear: 0, moose_elk: 0, raccoon: 0, rabbit: 0, small_mammals: 0 };
+                          updatedReports.forEach(sighting => {
+                            if (sighting.type in updatedCounters) {
+                              updatedCounters[sighting.type] += sighting.quantity;
+                            }
+                          });
+                          setAnimalCounters(updatedCounters);
+                          
+                          console.log('[COMPREHENSIVE TEST] Updated HomeScreen state:', {
+                            recentSightingsLength: updatedReports.length,
+                            animalCounters: updatedCounters
+                          });
+                          
+                          // Final summary
+                          console.log('[COMPREHENSIVE TEST] === FINAL SUMMARY ===');
+                          console.log('[COMPREHENSIVE TEST] User authenticated:', !!user);
+                          console.log('[COMPREHENSIVE TEST] Firebase docs found:', firebaseDocs.length);
+                          console.log('[COMPREHENSIVE TEST] Service reports found:', serviceReports.length);
+                          console.log('[COMPREHENSIVE TEST] Test sighting created:', !!testReportId);
+                          console.log('[COMPREHENSIVE TEST] Updated reports found:', updatedReports.length);
+                          
+                          const success = updatedReports.length > 0;
+                          Alert.alert(
+                            success ? 'Test Successful!' : 'Test Issues Found',
+                            success 
+                              ? `Sightings flow is working! Found ${updatedReports.length} reports.`
+                              : `Issues detected. Check console logs for details.`
+                          );
+                          
                         } catch (error) {
-                          console.error('[DEBUG] Error creating test sighting:', error);
-                          Alert.alert('Error', 'Failed to create test sighting');
+                          console.error('[COMPREHENSIVE TEST] Error during comprehensive test:', error);
+                          Alert.alert('Test Error', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
                         }
                       }}>
-                      <Text style={styles.debugButtonText}>Create Test Sighting</Text>
+                      <Text style={styles.debugButtonText}>Comprehensive Test</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.debugButton}
