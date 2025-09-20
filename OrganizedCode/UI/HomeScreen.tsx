@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   Platform,
   PermissionsAndroid,
   Modal,
@@ -13,6 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useMessageModal } from './useMessageModal';
 import AnimalSelectionModal from './AnimalSelectionModal';
 import QuantitySelectionModal from './QuantitySelectionModal';
 import QuantityUpdateModal from './QuantityUpdateModal';
@@ -79,6 +79,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   // Help state variables
   const [helpTab, setHelpTab] = useState<'contact' | 'faq'>('contact');
+
+  const { showMessage } = useMessageModal();
 
   // Removed: useEffect for sightings tab
 
@@ -198,11 +200,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       if (!hasPermission) {
         const granted = await locationService.requestPermissions();
         if (!granted) {
-          Alert.alert(
-            'Location Permission Required',
-            'This app needs location access to report wildlife sightings. Please enable location permissions in your device settings.',
-            [{ text: 'OK' }]
-          );
+          showMessage({
+            type: 'error',
+            title: 'Location Permission Required',
+            message: 'This app needs location access to report wildlife sightings. Please enable location permissions in your device settings.',
+            buttons: [{ text: 'OK', onPress: () => {} }]
+          });
           setLocationError({
             code: 1,
             message: 'Location permission denied',
@@ -446,7 +449,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     } catch (error) {
       console.error('[DEBUG] Error loading recent sightings:', error);
       setRecentSightings([]);
-      Alert.alert('Error', 'Failed to load recent sightings. Please check your connection and try again.');
+      showMessage({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load recent sightings. Please check your connection and try again.',
+        buttons: [{ text: 'OK', onPress: () => {} }]
+      });
     }
   };
 
@@ -481,7 +489,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       // Prepare location data for the report
       if (!currentLocation) {
         console.log('[DEBUG] No current location available');
-        Alert.alert('Location Error', 'Unable to get your current location. Please ensure location services are enabled and try again.');
+        showMessage({
+          type: 'error',
+          title: 'Location Error',
+          message: 'Unable to get your current location. Please ensure location services are enabled and try again.',
+          buttons: [{ text: 'OK', onPress: () => {} }]
+        });
         return;
       }
 
@@ -504,7 +517,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
       if (!user) {
         console.log('[DEBUG] No authenticated user, cannot submit report');
-        Alert.alert('Authentication Error', 'You must be logged in to report sightings.');
+        showMessage({
+          type: 'error',
+          title: 'Authentication Error',
+          message: 'You must be logged in to report sightings.',
+          buttons: [{ text: 'OK', onPress: () => {} }]
+        });
         return;
       }
 
@@ -523,17 +541,29 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         console.log('[DEBUG] Sightings and counters reloaded after report');
         setActiveTab('sightings');
 
-        Alert.alert(
-          'Report Submitted!',
-          `Your ${animalType} sighting has been reported successfully.`,
-        );
+        showMessage({
+          type: 'success',
+          title: 'Report Submitted!',
+          message: `Your ${animalType} sighting has been reported successfully.`,
+          buttons: [{ text: 'OK', onPress: () => {} }]
+        });
       } else {
         console.log('[DEBUG] Report submission failed, no ID returned');
-        Alert.alert('Submission Failed', 'Failed to submit report. Please try again.');
+        showMessage({
+          type: 'error',
+          title: 'Submission Failed',
+          message: 'Failed to submit report. Please try again.',
+          buttons: [{ text: 'OK', onPress: () => {} }]
+        });
       }
     } catch (error) {
       console.error('[DEBUG] Error in handleSaveSighting:', error);
-      Alert.alert('Error', 'Failed to submit report. Please check your connection and try again.');
+      showMessage({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to submit report. Please check your connection and try again.',
+        buttons: [{ text: 'OK', onPress: () => {} }]
+      });
     }
   };
 
@@ -548,10 +578,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     }));
 
     // Show confirmation that additional details were recorded
-    Alert.alert(
-      'Details Updated!',
-      `Additional ${quantity} ${selectedAnimalType}${quantity > 1 ? 's' : ''} recorded.`,
-    );
+    showMessage({
+      type: 'success',
+      title: 'Details Updated!',
+      message: `Additional ${quantity} ${selectedAnimalType}${quantity > 1 ? 's' : ''} recorded.`,
+      buttons: [{ text: 'OK', onPress: () => {} }]
+    });
 
     setShowQuantityUpdateModal(false);
     setLastReportId(null);
@@ -733,7 +765,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           });
                           
                           if (!user) {
-                            Alert.alert('Test Failed', 'No authenticated user found. Please sign in first.');
+                            showMessage({
+                              type: 'error',
+                              title: 'Test Failed',
+                              message: 'No authenticated user found. Please sign in first.',
+                              buttons: [{ text: 'OK', onPress: () => {} }]
+                            });
                             return;
                           }
                           
@@ -838,16 +875,23 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           console.log('[COMPREHENSIVE TEST] Updated reports found:', updatedReports.length);
                           
                           const success = updatedReports.length > 0;
-                          Alert.alert(
-                            success ? 'Test Successful!' : 'Test Issues Found',
-                            success 
+                          showMessage({
+                            type: success ? 'success' : 'warning',
+                            title: success ? 'Test Successful!' : 'Test Issues Found',
+                            message: success 
                               ? `Sightings flow is working! Found ${updatedReports.length} reports.`
-                              : `Issues detected. Check console logs for details.`
-                          );
+                              : `Issues detected. Check console logs for details.`,
+                            buttons: [{ text: 'OK', onPress: () => {} }]
+                          });
                           
                         } catch (error) {
                           console.error('[COMPREHENSIVE TEST] Error during comprehensive test:', error);
-                          Alert.alert('Test Error', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                          showMessage({
+                            type: 'error',
+                            title: 'Test Error',
+                            message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                            buttons: [{ text: 'OK', onPress: () => {} }]
+                          });
                         }
                       }}>
                       <Text style={styles.debugButtonText}>Comprehensive Test</Text>
@@ -861,7 +905,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           const user = getCurrentUser();
                           
                           if (!user) {
-                            Alert.alert('Error', 'No authenticated user');
+                            showMessage({
+                              type: 'error',
+                              title: 'Error',
+                              message: 'No authenticated user',
+                              buttons: [{ text: 'OK', onPress: () => {} }]
+                            });
                             return;
                           }
                           
@@ -889,13 +938,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                             docs.push({ id: doc.id, data: doc.data() });
                           });
                           
-                          Alert.alert(
-                            'Firestore Debug',
-                            `Found ${docs.length} documents\nUser ID: ${user.uid.substring(0, 8)}...`
-                          );
+                          showMessage({
+                            type: 'info',
+                            title: 'Firestore Debug',
+                            message: `Found ${docs.length} documents\nUser ID: ${user.uid.substring(0, 8)}...`,
+                            buttons: [{ text: 'OK', onPress: () => {} }]
+                          });
                         } catch (error) {
                           console.error('[DEBUG] Error querying Firestore directly:', error);
-                          Alert.alert('Error', `Failed to query Firestore: ${error instanceof Error ? error.message : 'Unknown error'}`);
+                          showMessage({
+                            type: 'error',
+                            title: 'Error',
+                            message: `Failed to query Firestore: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                            buttons: [{ text: 'OK', onPress: () => {} }]
+                          });
                         }
                       }}>
                       <Text style={styles.debugButtonText}>Debug Firestore</Text>
@@ -968,7 +1024,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                     )}
                     <TouchableOpacity
                       style={styles.manageSubscriptionButton}
-                      onPress={() => Alert.alert('Coming Soon', 'Subscription management will be available soon!')}>
+                      onPress={() => showMessage({
+                        type: 'info',
+                        title: 'Coming Soon',
+                        message: 'Subscription management will be available soon!',
+                        buttons: [{ text: 'OK', onPress: () => {} }]
+                      })}>
                       <Text style={styles.manageSubscriptionButtonText}>Manage Subscription</Text>
                     </TouchableOpacity>
                   </View>
@@ -1013,24 +1074,35 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                 <View style={styles.profileInfoContent}>
                   <TouchableOpacity
                     style={styles.securityButton}
-                    onPress={() => Alert.alert('Coming Soon', 'Password change functionality will be available soon!')}>
+                    onPress={() => showMessage({
+                      type: 'info',
+                      title: 'Coming Soon',
+                      message: 'Password change functionality will be available soon!',
+                      buttons: [{ text: 'OK', onPress: () => {} }]
+                    })}>
                     <Text style={styles.securityButtonText}>Change Password</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity
                     style={styles.deleteAccountButton}
                     onPress={() => {
-                      Alert.alert(
-                        'Delete Account',
-                        'Are you sure you want to delete your account? This action cannot be undone.',
-                        [
-                          {text: 'No, go back', style: 'cancel'},
-                          {text: 'Yes', style: 'destructive', onPress: () => {
-                            Alert.alert('Account Deleted', 'Your account has been deleted.');
+                      showMessage({
+                        type: 'warning',
+                        title: 'Delete Account',
+                        message: 'Are you sure you want to delete your account? This action cannot be undone.',
+                        buttons: [
+                          { text: 'No, go back', onPress: () => {}, style: 'cancel' },
+                          { text: 'Yes', onPress: () => {
+                            showMessage({
+                              type: 'success',
+                              title: 'Account Deleted',
+                              message: 'Your account has been deleted.',
+                              buttons: [{ text: 'OK', onPress: () => {} }]
+                            });
                             // In a real app, this would call an API to delete the account
-                          }},
+                          }, style: 'destructive' }
                         ]
-                      );
+                      });
                     }}>
                     <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
                   </TouchableOpacity>
@@ -1098,11 +1170,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                       value={locationAccessEnabled}
                       onValueChange={(value) => {
                         if (!value) {
-                          Alert.alert(
-                            'Disable Location Access',
-                            'This app needs your location to properly function.\n\nTo continue disabling location access, go to your device settings and disable location permissions for this app.',
-                            [{ text: 'OK' }]
-                          );
+                          showMessage({
+                            type: 'warning',
+                            title: 'Disable Location Access',
+                            message: 'This app needs your location to properly function.\n\nTo continue disabling location access, go to your device settings and disable location permissions for this app.',
+                            buttons: [{ text: 'OK', onPress: () => {} }]
+                          });
                         } else {
                           setLocationAccessEnabled(value);
                           saveSettings({ locationAccessEnabled: value });
@@ -1245,11 +1318,12 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                       value={anonymousSightings}
                       onValueChange={(value) => {
                         if (value) {
-                          Alert.alert(
-                            'Ghost Mode Activated',
-                            'You are now in Ghost mode. You can continue to report sightings like normal without your display name being shared.',
-                            [{ text: 'OK' }]
-                          );
+                          showMessage({
+                            type: 'info',
+                            title: 'Ghost Mode Activated',
+                            message: 'You are now in Ghost mode. You can continue to report sightings like normal without your display name being shared.',
+                            buttons: [{ text: 'OK', onPress: () => {} }]
+                          });
                         }
                         setAnonymousSightings(value);
                         saveSettings({ anonymousSightings: value });
@@ -1270,13 +1344,23 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   
                   <TouchableOpacity 
                     style={styles.linkButton}
-                    onPress={() => Alert.alert('Coming Soon', 'Terms of Service will be available soon!')}>
+                    onPress={() => showMessage({
+                      type: 'info',
+                      title: 'Coming Soon',
+                      message: 'Terms of Service will be available soon!',
+                      buttons: [{ text: 'OK', onPress: () => {} }]
+                    })}>
                     <Text style={styles.linkButtonText}>Terms of Service</Text>
                   </TouchableOpacity>
                   
                   <TouchableOpacity 
                     style={styles.linkButton}
-                    onPress={() => Alert.alert('Coming Soon', 'Privacy Policy will be available soon!')}>
+                    onPress={() => showMessage({
+                      type: 'info',
+                      title: 'Coming Soon',
+                      message: 'Privacy Policy will be available soon!',
+                      buttons: [{ text: 'OK', onPress: () => {} }]
+                    })}>
                     <Text style={styles.linkButtonText}>Privacy Policy</Text>
                   </TouchableOpacity>
                 </View>
@@ -1322,10 +1406,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                       style={styles.contactButton}
                       onPress={() => {
                         // In a real app, this would initiate a phone call
-                        Alert.alert('Call Support', 'Calling 888-888-8888...', [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Call', onPress: () => Alert.alert('Success', 'Call initiated!') }
-                        ]);
+                        showMessage({
+                          type: 'info',
+                          title: 'Call Support',
+                          message: 'Calling 888-888-8888...',
+                          buttons: [
+                            { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+                            { text: 'Call', onPress: () => showMessage({
+                              type: 'success',
+                              title: 'Success',
+                              message: 'Call initiated!',
+                              buttons: [{ text: 'OK', onPress: () => {} }]
+                            }) }
+                          ]
+                        });
                       }}>
                       <Text style={styles.contactButtonText}>📞 888-888-8888</Text>
                     </TouchableOpacity>
@@ -1337,10 +1431,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                       style={styles.contactButton}
                       onPress={() => {
                         // In a real app, this would open email client
-                        Alert.alert('Email Support', 'Opening email to ohnodeer@support.com...', [
-                          { text: 'Cancel', style: 'cancel' },
-                          { text: 'Send Email', onPress: () => Alert.alert('Success', 'Email client opened!') }
-                        ]);
+                        showMessage({
+                          type: 'info',
+                          title: 'Email Support',
+                          message: 'Opening email to ohnodeer@support.com...',
+                          buttons: [
+                            { text: 'Cancel', onPress: () => {}, style: 'cancel' },
+                            { text: 'Send Email', onPress: () => showMessage({
+                              type: 'success',
+                              title: 'Success',
+                              message: 'Email client opened!',
+                              buttons: [{ text: 'OK', onPress: () => {} }]
+                            }) }
+                          ]
+                        });
                       }}>
                       <Text style={styles.contactButtonText}>✉️ ohnodeer@support.com</Text>
                     </TouchableOpacity>

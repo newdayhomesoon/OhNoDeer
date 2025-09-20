@@ -4,13 +4,13 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Alert,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
 import {SubscriptionProduct} from '../CoreLogic/types';
 import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
 import { theme } from '../../src/app-theme';
+import { useMessageModal } from './useMessageModal';
 
 interface SubscriptionScreenProps {
   onClose: () => void;
@@ -21,6 +21,7 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
   onClose,
   onSubscriptionSuccess,
 }) => {
+  const { showMessage } = useMessageModal();
   const [products, setProducts] = useState<SubscriptionProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState<string | null>(null);
@@ -35,10 +36,12 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
       setProducts(availableProducts);
     } catch (error) {
       console.error('Failed to load products:', error);
-      Alert.alert(
-        'Error',
-        'Failed to load subscription options. Please try again.',
-      );
+      showMessage({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load subscription options. Please try again.',
+        buttons: [{ text: 'OK', onPress: () => {} }]
+      });
     } finally {
       setLoading(false);
     }
@@ -57,10 +60,12 @@ const SubscriptionScreen: React.FC<SubscriptionScreenProps> = ({
       }
     } catch (error) {
       console.error('Purchase failed:', error);
-      Alert.alert(
-        'Purchase Failed',
-        'Unable to complete purchase. Please try again.',
-      );
+      showMessage({
+        type: 'error',
+        title: 'Purchase Failed',
+        message: 'Unable to complete purchase. Please try again.',
+        buttons: [{ text: 'OK', onPress: () => {} }]
+      });
     } finally {
       setPurchasing(null);
     }

@@ -29,6 +29,7 @@ import { getReactNativePersistence } from 'firebase/auth/react-native';
 import {auth, createUserProfile} from '../Storage/firebase/service';
 import {AuthService} from '../Storage/wildlifeReportsService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useMessageModal } from './useMessageModal';
 import { theme } from '../../src/app-theme';
 
 type LoginScreenProps = {
@@ -48,6 +49,8 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
   const [generalAuthError, setGeneralAuthError] = useState('');
   const lastActionRef = useRef<number>(0);
   const [showPassword, setShowPassword] = useState(false);
+
+  const { showMessage, MessageModalComponent } = useMessageModal();
 
   const throttle = (fn: () => void, delay = 700) => {
     const now = Date.now();
@@ -77,10 +80,18 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
       if (success) {
         onLogin();
       } else {
-        Alert.alert('Error', 'Failed to sign in. Please try again.');
+        showMessage({
+          type: 'error',
+          title: 'Sign In Failed',
+          message: 'Failed to sign in. Please try again.',
+        });
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to sign in. Please try again.');
+      showMessage({
+        type: 'error',
+        title: 'Sign In Failed',
+        message: 'Failed to sign in. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -113,7 +124,11 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
       onLogin();
     } catch (error: any) {
       console.error('Google sign-in error:', error);
-      Alert.alert('Error', 'Google sign-in failed. Please try again.');
+      showMessage({
+        type: 'error',
+        title: 'Google Sign-In Failed',
+        message: 'Google sign-in failed. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -121,7 +136,11 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
 
   const handleAppleLogin = async () => {
     if (!appleAuth.isSupported) {
-      Alert.alert('Error', 'Apple Sign-In is not supported on this device');
+      showMessage({
+        type: 'warning',
+        title: 'Not Supported',
+        message: 'Apple Sign-In is not supported on this device',
+      });
       return;
     }
 
@@ -156,7 +175,11 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
     } catch (error: any) {
       console.error('Apple sign-in error:', error);
       if (error.code !== appleAuth.Error.CANCELED) {
-        Alert.alert('Error', 'Apple sign-in failed. Please try again.');
+        showMessage({
+          type: 'error',
+          title: 'Apple Sign-In Failed',
+          message: 'Apple sign-in failed. Please try again.',
+        });
       }
     } finally {
       setLoading(false);
@@ -423,6 +446,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
           <Text style={styles.loadingText}>Please wait...</Text>
         </View>
       )}
+      <MessageModalComponent />
     </View>
   );
 }

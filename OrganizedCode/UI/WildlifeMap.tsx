@@ -1,10 +1,11 @@
 import React, {useEffect, useState, useRef} from 'react';
-import {View, StyleSheet, Alert, Text, Animated} from 'react-native';
+import {View, StyleSheet, Text, Animated} from 'react-native';
 import MapView, {Marker, Circle, PROVIDER_GOOGLE} from 'react-native-maps';
 import {featureFlags} from '../CoreLogic/featureFlags';
 import {checkNearbyHotspots, FirebaseHotspot} from '../Storage/firebase/service';
 import {Location} from '../CoreLogic/types';
 import { theme } from '../../src/app-theme';
+import { useMessageModal } from './useMessageModal';
 
 interface Region {
   latitude: number;
@@ -21,6 +22,7 @@ interface WildlifeMapProps {
 
 
 const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpdate, showLegend = true}) => {
+  const { showMessage } = useMessageModal();
   const [hotspots, setHotspots] = useState<FirebaseHotspot[]>([]);
   const [county, setCounty] = useState<string | null>(null);
   const [mapRegion, setMapRegion] = useState<Region>({
@@ -92,7 +94,12 @@ const WildlifeMap: React.FC<WildlifeMapProps> = ({currentLocation, onLocationUpd
       setHotspots(filteredHotspots);
     } catch (error) {
       console.error('Error loading hotspots:', error);
-      Alert.alert('Error', 'Failed to load wildlife hotspots');
+      showMessage({
+        type: 'error',
+        title: 'Error',
+        message: 'Failed to load wildlife hotspots',
+        buttons: [{ text: 'OK', onPress: () => {} }]
+      });
     }
   };
 
