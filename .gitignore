@@ -32,4 +32,4 @@ React Native
 /bin/
 
 Codemagic
-/codemagic.yaml
+# codemagic.yaml is intentionally tracked; remove the line below if you prefer to ignore it
