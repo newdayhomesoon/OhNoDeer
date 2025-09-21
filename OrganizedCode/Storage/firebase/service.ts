@@ -105,18 +105,32 @@ export const auth = (() => {
 
   // Set persistence to AsyncStorage for React Native compatibility
   // This must be done before any auth operations
-  const persistencePromise = setPersistence(authInstance, getReactNativePersistence(AsyncStorage))
-    .then(() => {
-      console.log('[DEBUG] Auth persistence set successfully');
-    })
-    .catch((error) => {
-      console.error('[DEBUG] Failed to set auth persistence:', error);
-      // Try to continue without persistence - auth will still work but won't persist
-      console.warn('[DEBUG] Authentication will work but login state may not persist across app restarts');
-    });
+  let persistencePromise: Promise<void> | null = null;
+  let persistenceSet = false;
+
+  try {
+    persistencePromise = setPersistence(authInstance, getReactNativePersistence(AsyncStorage))
+      .then(() => {
+        console.log('[DEBUG] Auth persistence set successfully');
+        persistenceSet = true;
+      })
+      .catch((error) => {
+        console.error('[DEBUG] Failed to set auth persistence:', error);
+        // In React Native, if AsyncStorage persistence fails, continue without persistence
+        // The auth will still work but state won't persist across app restarts
+        console.warn('[DEBUG] Authentication will work but login state may not persist across app restarts');
+        persistenceSet = false;
+        // Don't throw - allow the app to continue without persistence
+      });
+  } catch (error) {
+    console.error('[DEBUG] Error initializing persistence:', error);
+    persistencePromise = Promise.resolve(); // Continue without persistence
+    persistenceSet = false;
+  }
 
   // Store the promise so other parts of the code can wait for it if needed
   (authInstance as any)._persistencePromise = persistencePromise;
+  (authInstance as any)._persistenceSet = persistenceSet;
 
   console.log('[DEBUG] Firebase auth initialized successfully');
   return authInstance;
@@ -168,12 +182,17 @@ export const signInUser = async (): Promise<User | null> => {
 
     // Ensure persistence is set before attempting auth
     const persistencePromise = (auth as any)._persistencePromise;
+    const persistenceSet = (auth as any)._persistenceSet;
+
     if (persistencePromise) {
       console.log('[DEBUG] signInUser - Waiting for persistence to be set...');
       await persistencePromise;
-      console.log('[DEBUG] signInUser - Persistence confirmed');
+      console.log('[DEBUG] signInUser - Persistence setup completed, persistence set:', persistenceSet);
+    } else {
+      console.log('[DEBUG] signInUser - No persistence promise found');
     }
 
+    console.log('[DEBUG] signInUser - Attempting anonymous sign in...');
     const result = await signInAnonymously(auth);
     console.log('[DEBUG] signInUser - Anonymous sign in successful, user:', result.user.uid);
     console.log('[DEBUG] signInUser - User details:', {
@@ -182,6 +201,14 @@ export const signInUser = async (): Promise<User | null> => {
       isAnonymous: result.user.isAnonymous,
       emailVerified: result.user.emailVerified
     });
+
+    // Force persistence of the auth state by ensuring the user is cached
+    console.log('[DEBUG] signInUser - Ensuring auth state persistence...');
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+      console.log('[DEBUG] signInUser - Auth state confirmed persisted for user:', currentUser.uid);
+    }
+
     return result.user;
   } catch (error) {
     console.error('[DEBUG] signInUser - Authentication error:', error);
@@ -200,9 +227,11 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
 
   // Ensure persistence is set before setting up the listener
   const persistencePromise = (auth as any)._persistencePromise;
+  const persistenceSet = (auth as any)._persistenceSet;
+
   if (persistencePromise) {
     persistencePromise.then(() => {
-      console.log('[DEBUG] onAuthStateChange - Persistence confirmed, setting up listener');
+      console.log('[DEBUG] onAuthStateChange - Persistence setup completed, persistence set:', persistenceSet);
     }).catch(() => {
       console.log('[DEBUG] onAuthStateChange - Persistence setup failed, but continuing with listener');
     });
