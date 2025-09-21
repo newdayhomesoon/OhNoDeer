@@ -57,6 +57,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [userName, setUserName] = useState('Guest');
   const [userEmail, setUserEmail] = useState('guest@example.com');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [sightingsUnsubscribe, setSightingsUnsubscribe] = useState<(() => void) | null>(null);
   const [animalCounters, setAnimalCounters] = useState({
     deer: 0,
     bear: 0,
@@ -499,13 +500,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         return;
       }
 
-      // Try to load cached sightings first
-      const cachedSightings = await loadSightingsFromCache();
-      if (cachedSightings && cachedSightings.length > 0) {
-        console.log('[DEBUG] Using cached sightings:', cachedSightings.length);
-        setRecentSightings(cachedSightings);
-      }
-
       console.log('[DEBUG] User authenticated, fetching recent sightings from all users...');
       const sightings = await WildlifeReportsService.getRecentSightings(12, currentLocation ? {
         latitude: currentLocation.latitude,
@@ -570,6 +564,71 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       });
     }
   };
+
+  // Set up real-time listener for recent sightings
+  useEffect(() => {
+    const setupSightingsListener = async () => {
+      try {
+        console.log('[DEBUG] Setting up real-time sightings listener');
+        const { collection, query, orderBy, limit, onSnapshot } = await import('firebase/firestore');
+        const { db } = await import('../Storage/firebase/service');
+
+        const q = query(
+          collection(db, 'sightings'),
+          orderBy('timestamp', 'desc'),
+          limit(3)
+        );
+
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+          console.log('[DEBUG] Real-time sightings update received');
+          const sightings: SightingReport[] = [];
+          
+          querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            sightings.push({
+              id: doc.id,
+              type: data.type,
+              quantity: data.quantity,
+              location: data.location,
+              timestamp: data.timestamp,
+              reportedBy: data.reportedBy
+            });
+          });
+
+          console.log('[DEBUG] Real-time sightings loaded:', sightings.length);
+          setRecentSightings(sightings);
+          
+          // Cache the sightings data
+          saveSightingsToCache(sightings);
+        }, (error) => {
+          console.error('[DEBUG] Real-time sightings listener error:', error);
+          // Try to use cached data as fallback
+          loadSightingsFromCache().then(cachedSightings => {
+            if (cachedSightings && cachedSightings.length > 0) {
+              console.log('[DEBUG] Using cached sightings as fallback');
+              setRecentSightings(cachedSightings);
+            }
+          });
+        });
+
+        setSightingsUnsubscribe(() => unsubscribe);
+        console.log('[DEBUG] Real-time sightings listener set up successfully');
+      } catch (error) {
+        console.error('[DEBUG] Error setting up sightings listener:', error);
+      }
+    };
+
+    setupSightingsListener();
+
+    // Cleanup function
+    return () => {
+      if (sightingsUnsubscribe) {
+        console.log('[DEBUG] Cleaning up sightings listener');
+        sightingsUnsubscribe();
+        setSightingsUnsubscribe(null);
+      }
+    };
+  }, []);
 
   const handleReportPress = async () => {
     // Open animal selection modal instead of submitting immediately
@@ -864,154 +923,6 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                     <TouchableOpacity
                       style={styles.debugButton}
                       onPress={async () => {
-                        console.log('[COMPREHENSIVE TEST] Starting comprehensive sightings flow test...');
-                        
-                        try {
-                          // Test 1: Check authentication
-                          console.log('[COMPREHENSIVE TEST] === TEST 1: Authentication Check ===');
-                          const user = getCurrentUser();
-                          console.log('[COMPREHENSIVE TEST] Current user:', {
-                            uid: user?.uid,
-                            email: user?.email,
-                            isAnonymous: user?.isAnonymous,
-                            exists: !!user
-                          });
-                          
-                          if (!user) {
-                            showMessage({
-                              type: 'error',
-                              title: 'Test Failed',
-                              message: 'No authenticated user found. Please sign in first.',
-                              buttons: [{ text: 'OK', onPress: () => {} }]
-                            });
-                            return;
-                          }
-                          
-                          // Test 2: Test Firebase service directly
-                          console.log('[COMPREHENSIVE TEST] === TEST 2: Firebase Service Direct Test ===');
-                          const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
-                          const { db } = await import('../Storage/firebase/service');
-                          
-                          const q = query(
-                            collection(db, 'wildlife_reports'),
-                            where('userId', '==', user.uid),
-                            orderBy('timestamp', 'desc'),
-                            limit(10)
-                          );
-                          
-                          const querySnapshot = await getDocs(q);
-                          console.log('[COMPREHENSIVE TEST] Firebase direct query results:', {
-                            size: querySnapshot.size,
-                            empty: querySnapshot.empty
-                          });
-                          
-                          const firebaseDocs: Array<{id: string; data: any}> = [];
-                          querySnapshot.forEach((doc) => {
-                            firebaseDocs.push({ id: doc.id, data: doc.data() });
-                          });
-                          console.log('[COMPREHENSIVE TEST] Firebase documents:', firebaseDocs);
-                          
-                          // Test 3: Test WildlifeReportsService
-                          console.log('[COMPREHENSIVE TEST] === TEST 3: WildlifeReportsService Test ===');
-                          const serviceReports = await WildlifeReportsService.getUserReports(20);
-                          console.log('[COMPREHENSIVE TEST] WildlifeReportsService results:', {
-                            length: serviceReports.length,
-                            reports: serviceReports
-                          });
-                          
-                          // Test 4: Test HomeScreen state
-                          console.log('[COMPREHENSIVE TEST] === TEST 4: HomeScreen State Test ===');
-                          console.log('[COMPREHENSIVE TEST] Current HomeScreen state:', {
-                            recentSightingsLength: recentSightings.length,
-                            animalCounters,
-                            activeTab
-                          });
-                          
-                          // Test 5: Create a test sighting
-                          console.log('[COMPREHENSIVE TEST] === TEST 5: Create Test Sighting ===');
-                          const testLocation = currentLocation || {
-                            latitude: 40.7128,
-                            longitude: -74.0060,
-                            accuracy: 10,
-                            timestamp: Date.now()
-                          };
-                          
-                          console.log('[COMPREHENSIVE TEST] Creating test sighting with location:', testLocation);
-                          const testReportId = await WildlifeReportsService.submitReport(
-                            'deer',
-                            {
-                              latitude: testLocation.latitude,
-                              longitude: testLocation.longitude,
-                              accuracy: testLocation.accuracy
-                            },
-                            1
-                          );
-                          
-                          console.log('[COMPREHENSIVE TEST] Test sighting created with ID:', testReportId);
-                          
-                          // Wait for Firestore to propagate
-                          console.log('[COMPREHENSIVE TEST] Waiting 3 seconds for Firestore propagation...');
-                          await new Promise(resolve => setTimeout(resolve, 3000));
-                          
-                          // Test 6: Re-query after test sighting
-                          console.log('[COMPREHENSIVE TEST] === TEST 6: Re-query After Test Sighting ===');
-                          const updatedReports = await WildlifeReportsService.getUserReports(20);
-                          console.log('[COMPREHENSIVE TEST] Updated reports after test:', {
-                            length: updatedReports.length,
-                            reports: updatedReports
-                          });
-                          
-                          // Test 7: Update HomeScreen state
-                          console.log('[COMPREHENSIVE TEST] === TEST 7: Update HomeScreen State ===');
-                          setRecentSightings(updatedReports);
-                          
-                          // Recalculate counters
-                          const updatedCounters = { deer: 0, bear: 0, moose_elk: 0, raccoon: 0, rabbit: 0, small_mammals: 0 };
-                          updatedReports.forEach(sighting => {
-                            if (sighting.type in updatedCounters) {
-                              updatedCounters[sighting.type] += sighting.quantity;
-                            }
-                          });
-                          setAnimalCounters(updatedCounters);
-                          
-                          console.log('[COMPREHENSIVE TEST] Updated HomeScreen state:', {
-                            recentSightingsLength: updatedReports.length,
-                            animalCounters: updatedCounters
-                          });
-                          
-                          // Final summary
-                          console.log('[COMPREHENSIVE TEST] === FINAL SUMMARY ===');
-                          console.log('[COMPREHENSIVE TEST] User authenticated:', !!user);
-                          console.log('[COMPREHENSIVE TEST] Firebase docs found:', firebaseDocs.length);
-                          console.log('[COMPREHENSIVE TEST] Service reports found:', serviceReports.length);
-                          console.log('[COMPREHENSIVE TEST] Test sighting created:', !!testReportId);
-                          console.log('[COMPREHENSIVE TEST] Updated reports found:', updatedReports.length);
-                          
-                          const success = updatedReports.length > 0;
-                          showMessage({
-                            type: success ? 'success' : 'warning',
-                            title: success ? 'Test Successful!' : 'Test Issues Found',
-                            message: success 
-                              ? `Sightings flow is working! Found ${updatedReports.length} reports.`
-                              : `Issues detected. Check console logs for details.`,
-                            buttons: [{ text: 'OK', onPress: () => {} }]
-                          });
-                          
-                        } catch (error) {
-                          console.error('[COMPREHENSIVE TEST] Error during comprehensive test:', error);
-                          showMessage({
-                            type: 'error',
-                            title: 'Test Error',
-                            message: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
-                            buttons: [{ text: 'OK', onPress: () => {} }]
-                          });
-                        }
-                      }}>
-                      <Text style={styles.debugButtonText}>Comprehensive Test</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.debugButton}
-                      onPress={async () => {
                         console.log('[DEBUG] Debug button pressed - checking Firestore data');
                         try {
                           const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
@@ -1033,8 +944,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           const { db } = await import('../Storage/firebase/service');
                           
                           const q = query(
-                            collection(db, 'wildlife_reports'),
-                            where('userId', '==', user.uid),
+                            collection(db, 'sightings'),
                             orderBy('timestamp', 'desc'),
                             limit(10)
                           );
@@ -1054,7 +964,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           showMessage({
                             type: 'info',
                             title: 'Firestore Debug',
-                            message: `Found ${docs.length} documents\nUser ID: ${user.uid.substring(0, 8)}...`,
+                            message: `Found ${docs.length} documents in sightings collection`,
                             buttons: [{ text: 'OK', onPress: () => {} }]
                           });
                         } catch (error) {
