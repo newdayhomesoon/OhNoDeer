@@ -11,7 +11,7 @@ import LoginScreen from './OrganizedCode/UI/LoginScreen';
 import HomeScreen from './OrganizedCode/UI/HomeScreen';
 import ErrorBoundary from './OrganizedCode/UI/ErrorBoundary';
 import {AuthService} from './OrganizedCode/Storage/wildlifeReportsService';
-import {auth, onAuthStateChange} from './OrganizedCode/Storage/firebase/service';
+import {auth, onAuthStateChange, ensureAuthPersistence} from './OrganizedCode/Storage/firebase/service';
 
 function App(): JSX.Element {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -25,16 +25,10 @@ function App(): JSX.Element {
     // Wait for Firebase auth persistence to be set before setting up listener
     const setupAuthListener = async () => {
       try {
-        // Wait for persistence to be configured
-        const persistencePromise = (auth as any)._persistencePromise;
-        const persistenceSet = (auth as any)._persistenceSet;
-        const persistenceError = (auth as any)._persistenceError;
-
-        if (persistencePromise) {
-          console.log('[DEBUG] App - Waiting for auth persistence...');
-          await persistencePromise;
-          console.log('[DEBUG] App - Auth persistence completed. Set:', persistenceSet, 'Error:', persistenceError?.message);
-        }
+        // Ensure auth persistence is established (with retries) so Codemagic/native runs don't sign out users
+        console.log('[DEBUG] App - Ensuring auth persistence...');
+        const persistenceOk = await ensureAuthPersistence(4, 1000);
+        console.log('[DEBUG] App - ensureAuthPersistence returned:', persistenceOk);
 
         // Check current user immediately
         const currentUser = auth.currentUser;

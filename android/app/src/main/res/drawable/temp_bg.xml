@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple vector placeholder with deer silhouette on gradient background -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="360dp"
+    android:height="640dp"
+    android:viewportWidth="360"
+    android:viewportHeight="640">
+
+    <!-- Background gradient approximation using two rects -->
+    <path
+        android:fillColor="#FF0A1929"
+        android:pathData="M0,0h360v640h-360z" />
+    <path
+        android:fillColor="#FF2B2D3A"
+        android:pathData="M0,0h360v480h-360z" />
+
+    <!-- Simple hill shapes -->
+    <path
+        android:fillColor="#FF173543"
+        android:pathData="M0,480c40,-60 140,-120 240,-80s120,140 240,80v160h-480z" />
+
+    <!-- Deer body (stylized) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M200,360c-14,-6 -30,-6 -44,0c-10,4 -18,12 -22,22c-6,14 2,26 18,30c12,3 24,0 36,-4c12,-4 26,-10 34,-20c6,-8 6,-18 0,-26c-6,-8 -18,-12 -22,-12z" />
+
+    <!-- Deer head and neck -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M248,332c-6,-12 -18,-22 -30,-20c-6,0 -10,2 -14,6c-4,4 -6,8 -4,14c2,8 8,12 14,14c12,4 28,-2 34,-14z" />
+
+    <!-- Antlers (simple) -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M252,314c6,-12 18,-22 30,-22" strokeWidth="2" />
+
+</vector>

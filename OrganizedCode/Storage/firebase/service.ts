@@ -26,6 +26,8 @@ import {
 import {getFunctions, httpsCallable} from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {firebaseConfig, firebaseConfigIsPlaceholder} from './config';
+// small helper key used to surface persistence state during CI/native runs
+const PERSISTENCE_FLAG_KEY = 'firebase_persistence_set_v1';
 // Lightweight event listeners (avoid adding external deps)
 type ConnectivityListener = (state: { offline: boolean; lastChange: number }) => void;
 const connectivityListeners: ConnectivityListener[] = [];
@@ -115,6 +117,8 @@ export const auth = (() => {
         console.log('[DEBUG] Auth persistence set successfully');
         persistenceSet = true;
         persistenceError = null;
+        // persist a small marker in AsyncStorage so CI/native runs can verify
+        try { AsyncStorage.setItem(PERSISTENCE_FLAG_KEY, '1'); } catch (e) { /* non-blocking */ }
       })
       .catch((error) => {
         console.error('[DEBUG] Failed to set auth persistence:', error);
@@ -122,12 +126,14 @@ export const auth = (() => {
         persistenceSet = false;
         // Don't throw - allow the app to continue without persistence
         console.warn('[DEBUG] Authentication will work but login state may not persist across app restarts');
+        try { AsyncStorage.setItem(PERSISTENCE_FLAG_KEY, '0'); } catch (e) { /* non-blocking */ }
       });
   } catch (error) {
     console.error('[DEBUG] Error initializing persistence:', error);
     persistencePromise = Promise.resolve(); // Continue without persistence
     persistenceSet = false;
     persistenceError = error instanceof Error ? error : new Error(String(error));
+    try { AsyncStorage.setItem(PERSISTENCE_FLAG_KEY, '0'); } catch (e) { /* non-blocking */ }
   }
 
   // Store the promise and status so other parts of the code can check
@@ -138,6 +144,36 @@ export const auth = (() => {
   console.log('[DEBUG] Firebase auth initialized successfully');
   return authInstance;
 })();
+
+/**
+ * Retry logic for auth persistence. Call this on app boot (before auth operations)
+ * when running in environments where AsyncStorage/native modules may be slow to initialize
+ */
+export async function ensureAuthPersistence(retries = 3, delayMs = 800) {
+  try {
+    if ((auth as any)._persistenceSet) return true;
+    for (let i = 0; i < retries; i++) {
+      try {
+        console.log(`[DEBUG] ensureAuthPersistence attempt ${i + 1}/${retries}`);
+        await setPersistence(auth, getReactNativePersistence(AsyncStorage));
+        (auth as any)._persistenceSet = true;
+        (auth as any)._persistenceError = null;
+        try { await AsyncStorage.setItem(PERSISTENCE_FLAG_KEY, '1'); } catch {}
+        console.log('[DEBUG] ensureAuthPersistence - persistence set');
+        return true;
+      } catch (err) {
+        console.warn('[DEBUG] ensureAuthPersistence - attempt failed:', err);
+        (auth as any)._persistenceError = err instanceof Error ? err : new Error(String(err));
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+    }
+    try { await AsyncStorage.setItem(PERSISTENCE_FLAG_KEY, '0'); } catch {}
+    return false;
+  } catch (error) {
+    console.error('[DEBUG] ensureAuthPersistence - unexpected error:', error);
+    return false;
+  }
+}
 export const db = (() => {
   console.log('[DEBUG] Initializing Firestore...');
   const instance = getFirestore(requireApp());

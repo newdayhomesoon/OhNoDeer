@@ -271,7 +271,20 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
           source={{uri: 'temp_bg'}}
           style={StyleSheet.absoluteFillObject}
           resizeMode="cover"
-          onError={(error) => console.log('Background image load error:', error.nativeEvent)}
+          onError={(error) => {
+            console.log('Background image load error (uri temp_bg):', error.nativeEvent);
+            // Try require fallback — Android may need a bundled resource
+            try {
+              // eslint-disable-next-line @typescript-eslint/no-var-requires
+              const fallback = require('../../android/app/src/main/res/drawable-mdpi/temp_bg.png');
+              // Replace the image by forcing a state change (quick hack)
+              // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+              (Image as any).prefetch && (Image as any).prefetch(fallback as any);
+              console.log('Background image fallback require attempted');
+            } catch (reqErr) {
+              console.warn('Background image fallback require failed:', reqErr);
+            }
+          }}
         />
       </View>
 
