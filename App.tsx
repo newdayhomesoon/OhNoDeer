@@ -16,8 +16,7 @@ import {auth, onAuthStateChange} from './OrganizedCode/Storage/firebase/service'
 function App(): JSX.Element {
   const [loggedIn, setLoggedIn] = useState(false);
   const [initializing, setInitializing] = useState(true);
-  const [showLoginScreen, setShowLoginScreen] = useState(false);
-  const [isAnonymous, setIsAnonymous] = useState(false);
+  const [showLoginScreen, setShowLoginScreen] = useState(true);
 
   useEffect(() => {
     console.log('[DEBUG] App - Setting up auth state listener');
@@ -34,35 +33,21 @@ function App(): JSX.Element {
           console.log('[DEBUG] App - Auth persistence confirmed');
         }
 
-        // Now set up the auth state listener
+                // Now set up the auth state listener
         const unsubscribe = onAuthStateChange(async (user) => {
-          console.log('[DEBUG] App - Auth state changed, user:', user?.uid, 'isAnonymous:', user?.isAnonymous);
+          console.log('[DEBUG] App - Auth state changed, user:', user?.uid, user?.email, user?.isAnonymous);
 
-          if (!user) {
-            // No user is signed in, attempt anonymous sign-in
-            console.log('[DEBUG] App - No user found, attempting anonymous sign-in...');
-            try {
-              const { signInAnonymously } = await import('firebase/auth');
-              await signInAnonymously(auth);
-              console.log('[DEBUG] App - Anonymous sign-in initiated');
-            } catch (error) {
-              console.error('[DEBUG] App - Anonymous sign-in failed:', error);
-              // If anonymous sign-in fails, show the login screen
-              setShowLoginScreen(true);
-              setLoggedIn(false);
-              setIsAnonymous(false);
-            }
-          } else {
+          if (user) {
             // User is signed in (either anonymous or authenticated)
             const isLoggedIn = true;
-            const userIsAnonymous = user.isAnonymous;
-            console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn, 'isAnonymous:', userIsAnonymous);
+            console.log('[DEBUG] App - User logged in, setting loggedIn to:', isLoggedIn);
             setLoggedIn(isLoggedIn);
-            setIsAnonymous(userIsAnonymous);
-            // Don't hide login screen for anonymous users - let them choose to sign in
-            if (!userIsAnonymous) {
-              setShowLoginScreen(false);
-            }
+            setShowLoginScreen(false);
+          } else {
+            // No user is signed in, show login screen
+            console.log('[DEBUG] App - No user found, showing login screen');
+            setLoggedIn(false);
+            setShowLoginScreen(true);
           }
 
           if (!hasInitialized) {
@@ -109,9 +94,7 @@ function App(): JSX.Element {
         <LoginScreen onLogin={() => setShowLoginScreen(false)} />
       ) : loggedIn ? (
         <HomeScreen 
-          onLogout={() => setLoggedIn(false)} 
-          userIsAnonymous={isAnonymous}
-          onShowLogin={() => setShowLoginScreen(true)}
+          onLogout={() => setLoggedIn(false)}
         />
       ) : (
         <View

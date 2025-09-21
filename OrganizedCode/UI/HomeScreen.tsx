@@ -10,6 +10,11 @@ import {
   SafeAreaView,
   ScrollView,
   Switch,
+  Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  ActivityIndicator,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMessageModal } from './useMessageModal';
@@ -20,7 +25,7 @@ import SubscriptionScreen from './SubscriptionScreen';
 // import AdBanner from './AdBanner'; // Temporarily disabled
 import WildlifeMap from './WildlifeMap';
 import ErrorBoundary from './ErrorBoundary';
-import {auth, getCurrentUser, onAuthStateChange} from '../Storage/firebase/service';
+import {auth, getCurrentUser, onAuthStateChange, createUserProfile} from '../Storage/firebase/service';
 import {
   WildlifeReportsService,
   AuthService,
@@ -32,14 +37,24 @@ import {inAppPurchaseService} from '../Storage/inAppPurchaseService';
 // import {adService} from '../Storage/adService'; // Temporarily disabled
 import {locationService, LocationData, LocationError} from '../Storage/locationService';
 import { theme } from '../../src/app-theme';
+import {GoogleSignin} from '@react-native-google-signin/google-signin';
+import { GOOGLE_WEB_CLIENT_ID } from '../Storage/firebase/credentials';
+import {appleAuth} from '@invertase/react-native-apple-authentication';
+import {
+  signInWithCredential,
+  GoogleAuthProvider,
+  OAuthProvider,
+  signInAnonymously,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from 'firebase/auth';
 
 type HomeScreenProps = {
   onLogout: () => void;
-  userIsAnonymous?: boolean;
-  onShowLogin?: () => void;
 };
 
-export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLogin}: HomeScreenProps) {
+export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [showQuantityModal, setShowQuantityModal] = useState(false);
   const [showQuantityUpdateModal, setShowQuantityUpdateModal] = useState(false);
@@ -83,6 +98,17 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
 
   // Help state variables
   const [helpTab, setHelpTab] = useState<'contact' | 'faq'>('contact');
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showGuestModal, setShowGuestModal] = useState(false);
+  const [showEmailModal, setShowEmailModal] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [emailMode, setEmailMode] = useState<'login' | 'create'>('login');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [generalAuthError, setGeneralAuthError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { showMessage } = useMessageModal();
 
@@ -371,6 +397,14 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
       }
     };
     loadSettings();
+  }, []);
+
+  // Configure Google Sign-In
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      offlineAccess: true,
+    });
   }, []);
 
   // Load user profile when authentication state changes
@@ -786,6 +820,211 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
     setShowSubscriptionScreen(true);
   };
 
+  const handleGuestLogin = () => {
+    setShowGuestModal(true);
+  };
+
+  const confirmGuestLogin = async () => {
+    setShowGuestModal(false);
+    setLoading(true);
+    try {
+      // Sign in anonymously using the service (ensures persistence is set)
+      const success = await AuthService.signInAnonymously();
+      if (success) {
+        setShowLoginModal(false);
+        // Reload user profile and sightings
+        await loadRecentSightings();
+      } else {
+        showMessage({
+          type: 'error',
+          title: 'Sign In Failed',
+          message: 'Failed to sign in. Please try again.',
+        });
+      }
+    } catch (error) {
+      showMessage({
+        type: 'error',
+        title: 'Sign In Failed',
+        message: 'Failed to sign in. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      if (!GOOGLE_WEB_CLIENT_ID || GOOGLE_WEB_CLIENT_ID.startsWith('your-google-web-client-id')) {
+        throw new Error('Google Web Client ID is not configured');
+      }
+      // Check if Google Play Services are available
+      await GoogleSignin.hasPlayServices();
+
+      // Sign in with Google
+      const {idToken} = await GoogleSignin.signIn();
+
+      // Create Firebase credential
+      const googleCredential = GoogleAuthProvider.credential(idToken);
+
+      // Sign in to Firebase
+      const result = await signInWithCredential(auth, googleCredential);
+
+      // Create user profile in Firestore
+      await createUserProfile(result.user.uid, result.user.email || '');
+
+      setShowLoginModal(false);
+      // Reload user profile and sightings
+      await loadRecentSightings();
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      showMessage({
+        type: 'error',
+        title: 'Google Sign-In Failed',
+        message: 'Google sign-in failed. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    if (!appleAuth.isSupported) {
+      showMessage({
+        type: 'warning',
+        title: 'Not Supported',
+        message: 'Apple Sign-In is not supported on this device',
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Start Apple sign-in
+      const appleAuthRequestResponse = await appleAuth.performRequest({
+        requestedOperation: appleAuth.Operation.LOGIN,
+        requestedScopes: [appleAuth.Scope.EMAIL, appleAuth.Scope.FULL_NAME],
+      });
+
+      // Create Firebase credential
+      const {identityToken, nonce} = appleAuthRequestResponse;
+      if (!identityToken) {
+        throw new Error('Apple identity token missing');
+      }
+      const appleCredential = new OAuthProvider('apple.com').credential({
+        idToken: identityToken, // identityToken is non-null after guard
+        rawNonce: nonce || undefined,
+      });
+
+      // Sign in to Firebase
+      const result = await signInWithCredential(auth, appleCredential);
+
+      // Create user profile in Firestore
+      await createUserProfile(result.user.uid, result.user.email || '');
+
+      setShowLoginModal(false);
+      // Reload user profile and sightings
+      await loadRecentSightings();
+    } catch (error: any) {
+      console.error('Apple sign-in error:', error);
+      if (error.code !== appleAuth.Error.CANCELED) {
+        showMessage({
+          type: 'error',
+          title: 'Apple Sign-In Failed',
+          message: 'Apple sign-in failed. Please try again.',
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openEmailModal = () => {
+    setShowEmailModal(true);
+    setEmailMode('login');
+  };
+
+  const attemptEmailAuth = async () => {
+    // Clear previous inline errors
+    setEmailError('');
+    setPasswordError('');
+    setGeneralAuthError('');
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
+      if (!trimmedEmail) setEmailError('Email is required');
+      if (!password) setPasswordError('Password is required');
+      return;
+    }
+    // Basic email regex (simple format validation)
+    const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setEmailError('Invalid email format');
+      return;
+    }
+    // Password validation rules
+    const issues: string[] = [];
+    if (password.length < 10 || password.length > 15) {
+      issues.push('Password must be 10-15 characters long');
+    }
+    if (!/[0-9]/.test(password)) {
+      issues.push('Include at least one number');
+    }
+    if (!/[@#$&]/.test(password)) {
+      issues.push('Include at least one special character (@ # $ &)');
+    }
+    if (issues.length) {
+      setPasswordError(issues.join('\n'));
+      return;
+    }
+    setLoading(true);
+    try {
+      let userCred;
+      if (emailMode === 'login') {
+        try {
+          userCred = await signInWithEmailAndPassword(auth, trimmedEmail, password);
+        } catch (err: any) {
+          if (err?.code === 'auth/user-not-found') {
+            // Switch to create mode automatically
+            setEmailMode('create');
+            setGeneralAuthError('Account not found. Press Create to register.');
+            return;
+          }
+          throw err;
+        }
+      } else {
+        userCred = await createUserWithEmailAndPassword(auth, trimmedEmail, password);
+      }
+      if (userCred) {
+        await createUserProfile(userCred.user.uid, userCred.user.email || trimmedEmail);
+        setShowEmailModal(false);
+        setShowLoginModal(false);
+        // Reload user profile and sightings
+        await loadRecentSightings();
+      }
+    } catch (error: any) {
+      console.error('Email auth error:', error);
+      setGeneralAuthError(error?.message?.replace('Firebase:', '').trim() || 'Email authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forgotPassword = async () => {
+    setEmailError('');
+    setGeneralAuthError('');
+    if (!email.trim()) {
+      setEmailError('Enter your email to get a reset link');
+      return;
+    }
+    try {
+      await sendPasswordResetEmail(auth, email.trim());
+      setGeneralAuthError('Password reset email sent.');
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      setGeneralAuthError('Could not send reset email.');
+    }
+  };
+
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleString();
   };
@@ -1024,7 +1263,7 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
               {/* Profile Info Content */}
               {profileInfoTab === 'details' ? (
                 <View style={styles.profileInfoContent}>
-                  {userIsAnonymous ? (
+                  {isAnonymous ? (
                     <View style={styles.guestProfileContent}>
                       <Text style={styles.guestProfileTitle}>Guest Mode</Text>
                       <Text style={styles.guestProfileText}>
@@ -1032,17 +1271,7 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
                       </Text>
                       <TouchableOpacity
                         style={styles.signInPromptButton}
-                        onPress={() => {
-                          showMessage({
-                            type: 'info',
-                            title: 'Sign In to Unlock Features',
-                            message: 'Create an account to report sightings, track your contributions, and access premium features.',
-                            buttons: [
-                              { text: 'Later', onPress: () => {} },
-                              { text: 'Sign In', onPress: handleLogout }
-                            ]
-                          });
-                        }}>
+                        onPress={() => setShowLoginModal(true)}>
                         <Text style={styles.signInPromptButtonText}>Sign In</Text>
                       </TouchableOpacity>
                     </View>
@@ -1086,7 +1315,7 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
                   )}
                 </View>
               ) : profileInfoTab === 'data' ? (
-                userIsAnonymous ? (
+                isAnonymous ? (
                   <View style={styles.profileInfoContent}>
                     <View style={styles.guestProfileContent}>
                       <Text style={styles.guestProfileTitle}>Personal Data</Text>
@@ -1095,17 +1324,7 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
                       </Text>
                       <TouchableOpacity
                         style={styles.signInPromptButton}
-                        onPress={() => {
-                          showMessage({
-                            type: 'info',
-                            title: 'Sign In to View Data',
-                            message: 'Access your personal wildlife reporting history and statistics.',
-                            buttons: [
-                              { text: 'Later', onPress: () => {} },
-                              { text: 'Sign In', onPress: handleLogout }
-                            ]
-                          });
-                        }}>
+                        onPress={() => setShowLoginModal(true)}>
                         <Text style={styles.signInPromptButtonText}>Sign In</Text>
                       </TouchableOpacity>
                     </View>
@@ -1148,7 +1367,7 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
                   </ScrollView>
                 )
               ) : (
-                userIsAnonymous ? (
+                isAnonymous ? (
                   <View style={styles.profileInfoContent}>
                     <View style={styles.guestProfileContent}>
                       <Text style={styles.guestProfileTitle}>Account Security</Text>
@@ -1157,17 +1376,7 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
                       </Text>
                       <TouchableOpacity
                         style={styles.signInPromptButton}
-                        onPress={() => {
-                          showMessage({
-                            type: 'info',
-                            title: 'Sign In for Security',
-                            message: 'Access account security features like password changes and data management.',
-                            buttons: [
-                              { text: 'Later', onPress: () => {} },
-                              { text: 'Sign In', onPress: handleLogout }
-                            ]
-                          });
-                        }}>
+                        onPress={() => setShowLoginModal(true)}>
                         <Text style={styles.signInPromptButtonText}>Sign In</Text>
                       </TouchableOpacity>
                     </View>
@@ -1619,9 +1828,9 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
             style={[
               styles.actionButton, 
               styles.primaryButton,
-              userIsAnonymous && styles.disabledButton
+              isAnonymous && styles.disabledButton
             ]}
-            onPress={userIsAnonymous ? () => {
+            onPress={isAnonymous ? () => {
               showMessage({
                 type: 'info',
                 title: 'Sign In Required',
@@ -1630,7 +1839,7 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
               });
             } : handleReportPress}>
             <Text style={styles.primaryButtonText}>
-              {userIsAnonymous ? 'View Only Mode' : 'Report Sighting'}
+              {isAnonymous ? 'View Only Mode' : 'Report Sighting'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -1739,6 +1948,168 @@ export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLog
               />
             </View>
           </SafeAreaView>
+        </Modal>
+
+        {/* Login Modal */}
+        <Modal
+          visible={showLoginModal}
+          animationType="fade"
+          transparent
+          onRequestClose={() => setShowLoginModal(false)}>
+          <View style={styles.loginModalOverlay}>
+            <View style={styles.loginModalContent}>
+              <TouchableOpacity
+                style={styles.loginModalCloseButton}
+                onPress={() => setShowLoginModal(false)}>
+                <Text style={styles.loginModalCloseButtonText}>✕</Text>
+              </TouchableOpacity>
+
+              <Text style={styles.loginModalTitle}>Sign In</Text>
+              <Text style={styles.loginModalSubtitle}>Choose your sign-in method</Text>
+
+              <View style={styles.loginButtonsContainer}>
+                <TouchableOpacity
+                  style={[styles.loginButton, styles.googleLoginButton]}
+                  onPress={handleGoogleLogin}
+                  disabled={loading}>
+                  <Text style={[styles.loginButtonIcon, styles.googleLoginIconText]}>G</Text>
+                  <Text style={[styles.loginButtonText, styles.googleLoginButtonText]}>Continue with Google</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.loginButton, styles.appleLoginButton]}
+                  onPress={handleAppleLogin}
+                  disabled={loading}>
+                  <Image
+                    source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg' }}
+                    style={{ width: 24, height: 24, marginRight: theme.spacing.s, tintColor: '#fff' }}
+                    resizeMode="contain"
+                  />
+                  <Text style={[styles.loginButtonText, styles.appleLoginButtonText]}>Continue with Apple</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.loginButton, styles.emailLoginButton]}
+                  onPress={openEmailModal}
+                  disabled={loading}>
+                  <Text style={[styles.loginButtonIcon, styles.emailLoginIconText]}>✉</Text>
+                  <Text style={[styles.loginButtonText, styles.emailLoginButtonText]}>Continue with Email</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.guestLoginButton}
+                  onPress={handleGuestLogin}>
+                  <Text style={styles.guestLoginLinkText}>Continue as Guest</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Guest Warning Modal */}
+        <Modal
+          animationType="fade"
+          transparent
+          visible={showGuestModal}
+          onRequestClose={() => setShowGuestModal(false)}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Wait!</Text>
+              <Text style={styles.modalText}>
+                You can continue as a Guest, but you can only view sightings in your area.
+              </Text>
+              <Text style={styles.modalActionText}>Log in to get the full experience!</Text>
+              <TouchableOpacity style={styles.learnMoreLink} onPress={() => {}}>
+                <Text style={styles.learnMoreText}>Learn more about the app</Text>
+              </TouchableOpacity>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowGuestModal(false)}>
+                  <Text style={styles.modalButtonText}>Go back</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.continueButton]}
+                  onPress={confirmGuestLogin}
+                  disabled={loading}>
+                  <Text style={[styles.modalButtonText, styles.continueButtonText]}>
+                    {loading ? 'Loading...' : 'Continue anyways'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Email Auth Modal */}
+        <Modal
+          animationType="fade"
+          transparent
+          visible={showEmailModal}
+          onRequestClose={() => setShowEmailModal(false)}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>
+                {emailMode === 'login' ? 'Sign In' : 'Create Account'}
+              </Text>
+              <TextInput
+                autoCapitalize="none"
+                keyboardType="email-address"
+                placeholder="Email"
+                placeholderTextColor="#718096"
+                style={styles.input}
+                value={email}
+                onChangeText={setEmail}
+                editable={!loading}
+              />
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  placeholder="Password"
+                  placeholderTextColor="#718096"
+                  secureTextEntry={!showPassword}
+                  style={[styles.input, styles.passwordInput]}
+                  value={password}
+                  onChangeText={setPassword}
+                  editable={!loading}
+                />
+                <TouchableOpacity
+                  style={styles.passwordToggle}
+                  onPress={() => setShowPassword(p => !p)}
+                  disabled={loading}
+                >
+                  <Text style={styles.passwordToggleText}>{showPassword ? 'Hide' : 'Show'}</Text>
+                </TouchableOpacity>
+              </View>
+              <TouchableOpacity onPress={forgotPassword} style={styles.forgotLink}>
+                <Text style={styles.forgotLinkText}>Forgot password?</Text>
+              </TouchableOpacity>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.cancelButton]}
+                  onPress={() => setShowEmailModal(false)}
+                  disabled={loading}>
+                  <Text style={styles.modalButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, styles.continueButton]}
+                  onPress={attemptEmailAuth}
+                  disabled={loading}>
+                  <Text style={[styles.modalButtonText, styles.continueButtonText]}>
+                    {loading ? 'Please wait...' : emailMode === 'login' ? 'Login' : 'Create'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              {(emailError || passwordError || generalAuthError) && (
+                <View style={styles.inlineErrors}>
+                  {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+                  {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+                  {generalAuthError ? <Text style={styles.errorText}>{generalAuthError}</Text> : null}
+                </View>
+              )}
+            </View>
+          </KeyboardAvoidingView>
         </Modal>
       </View>
     </View>
@@ -2629,6 +3000,245 @@ const styles = StyleSheet.create({
   signInPromptButtonText: {
     color: theme.colors.textPrimary,
     fontSize: theme.fontSize.body,
+    fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  // Login Modal Styles
+  loginModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  loginModalContent: {
+    backgroundColor: theme.colors.secondaryBackground,
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+  },
+  loginModalCloseButton: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    padding: 8,
+  },
+  loginModalCloseButtonText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.h3,
+    fontWeight: 'bold',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  loginModalTitle: {
+    fontSize: theme.fontSize.h2,
+    fontWeight: '700',
+    marginBottom: 8,
+    textAlign: 'center',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fontFamily.lato,
+  },
+  loginModalSubtitle: {
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.xl,
+    fontFamily: theme.fontFamily.openSans,
+  },
+  loginButtonsContainer: {
+    width: '100%',
+    gap: theme.spacing.m,
+  },
+  loginButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    paddingVertical: theme.spacing.l,
+    paddingHorizontal: theme.spacing.l,
+    borderRadius: theme.spacing.s,
+    alignItems: 'center',
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: theme.spacing.s,
+  },
+  googleLoginButton: {
+    backgroundColor: theme.colors.accent,
+  },
+  appleLoginButton: {
+    backgroundColor: '#000',
+  },
+  emailLoginButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: theme.colors.accent,
+  },
+  loginButtonText: {
+    color: '#1a365d',
+    fontSize: theme.fontSize.body,
+    fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  googleLoginButtonText: {
+    color: '#fff',
+  },
+  appleLoginButtonText: {
+    color: '#fff',
+  },
+  emailLoginButtonText: {
+    color: theme.colors.accent,
+  },
+  loginButtonIcon: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  googleLoginIconText: {
+    color: '#fff',
+  },
+  emailLoginIconText: {
+    color: theme.colors.accent,
+  },
+  guestLoginButton: {
+    marginTop: theme.spacing.s,
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'transparent',
+    paddingVertical: theme.spacing.m,
+  },
+  guestLoginLinkText: {
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.body,
+    textAlign: 'center',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  // Modal Styles (for guest warning and email auth)
+  modalContent: {
+    backgroundColor: theme.colors.secondaryBackground,
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 380,
+  },
+  modalTitle: {
+    fontSize: theme.fontSize.h2,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fontFamily.lato,
+  },
+  modalText: {
+    fontSize: theme.fontSize.body,
+    lineHeight: 24,
+    marginBottom: 16,
+    textAlign: 'center',
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fontFamily.openSans,
+  },
+  modalActionText: {
+    fontSize: theme.fontSize.body,
+    lineHeight: 24,
+    marginBottom: 16,
+    textAlign: 'center',
+    color: theme.colors.accent,
+    fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  learnMoreLink: {
+    marginBottom: 16,
+    alignSelf: 'center',
+  },
+  learnMoreText: {
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textSecondary,
+    textDecorationLine: 'underline',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 6,
+    minHeight: 48,
+  },
+  cancelButton: {
+    backgroundColor: theme.colors.secondaryBackground,
+    borderWidth: 1,
+    borderColor: theme.colors.textSecondary,
+  },
+  continueButton: {
+    backgroundColor: theme.colors.accent,
+  },
+  modalButtonText: {
+    fontWeight: '600',
+    fontSize: theme.fontSize.body,
+    textAlign: 'center',
+    width: '100%',
+    color: theme.colors.textSecondary,
+    fontFamily: theme.fontFamily.openSans,
+  },
+  continueButtonText: {
+    color: theme.colors.textPrimary,
+  },
+  input: {
+    backgroundColor: theme.colors.secondaryBackground,
+    borderRadius: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    fontSize: theme.fontSize.body,
+    borderWidth: 1,
+    borderColor: theme.colors.textSecondary,
+    marginBottom: 14,
+    color: theme.colors.textPrimary,
+    fontFamily: theme.fontFamily.openSans,
+  },
+  forgotLink: {
+    alignSelf: 'flex-end',
+    marginBottom: 12,
+  },
+  forgotLinkText: {
+    color: theme.colors.accent,
+    fontSize: theme.fontSize.caption,
+    fontWeight: '600',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  inlineErrors: {
+    marginTop: 12,
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: theme.fontSize.caption,
+    lineHeight: 18,
+    textAlign: 'center',
+    marginBottom: 4,
+    fontWeight: '500',
+    fontFamily: theme.fontFamily.openSans,
+  },
+  passwordWrapper: {
+    position: 'relative',
+    width: '100%',
+  },
+  passwordInput: {
+    paddingRight: 80,
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  passwordToggleText: {
+    color: theme.colors.accent,
+    fontSize: theme.fontSize.caption,
     fontWeight: '600',
     fontFamily: theme.fontFamily.openSans,
   },
