@@ -27,13 +27,20 @@ function App(): JSX.Element {
       try {
         // Wait for persistence to be configured
         const persistencePromise = (auth as any)._persistencePromise;
+        const persistenceSet = (auth as any)._persistenceSet;
+        const persistenceError = (auth as any)._persistenceError;
+
         if (persistencePromise) {
           console.log('[DEBUG] App - Waiting for auth persistence...');
           await persistencePromise;
-          console.log('[DEBUG] App - Auth persistence confirmed');
+          console.log('[DEBUG] App - Auth persistence completed. Set:', persistenceSet, 'Error:', persistenceError?.message);
         }
 
-                // Now set up the auth state listener
+        // Check current user immediately
+        const currentUser = auth.currentUser;
+        console.log('[DEBUG] App - Current user on startup:', currentUser?.uid, currentUser?.isAnonymous);
+
+        // Now set up the auth state listener
         const unsubscribe = onAuthStateChange(async (user) => {
           console.log('[DEBUG] App - Auth state changed, user:', user?.uid, user?.email, user?.isAnonymous);
 

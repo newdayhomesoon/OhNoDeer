@@ -101,36 +101,39 @@ function requireApp(): ReturnType<typeof initializeApp> {
 export const auth = (() => {
   console.log('[DEBUG] Initializing Firebase auth...');
   const authInstance = getAuth(requireApp());
-  console.log('[DEBUG] Setting auth persistence to getReactNativePersistence...');
+  console.log('[DEBUG] Setting auth persistence...');
 
   // Set persistence to AsyncStorage for React Native compatibility
   // This must be done before any auth operations
   let persistencePromise: Promise<void> | null = null;
   let persistenceSet = false;
+  let persistenceError: Error | null = null;
 
   try {
     persistencePromise = setPersistence(authInstance, getReactNativePersistence(AsyncStorage))
       .then(() => {
         console.log('[DEBUG] Auth persistence set successfully');
         persistenceSet = true;
+        persistenceError = null;
       })
       .catch((error) => {
         console.error('[DEBUG] Failed to set auth persistence:', error);
-        // In React Native, if AsyncStorage persistence fails, continue without persistence
-        // The auth will still work but state won't persist across app restarts
-        console.warn('[DEBUG] Authentication will work but login state may not persist across app restarts');
+        persistenceError = error;
         persistenceSet = false;
         // Don't throw - allow the app to continue without persistence
+        console.warn('[DEBUG] Authentication will work but login state may not persist across app restarts');
       });
   } catch (error) {
     console.error('[DEBUG] Error initializing persistence:', error);
     persistencePromise = Promise.resolve(); // Continue without persistence
     persistenceSet = false;
+    persistenceError = error;
   }
 
-  // Store the promise so other parts of the code can wait for it if needed
+  // Store the promise and status so other parts of the code can check
   (authInstance as any)._persistencePromise = persistencePromise;
   (authInstance as any)._persistenceSet = persistenceSet;
+  (authInstance as any)._persistenceError = persistenceError;
 
   console.log('[DEBUG] Firebase auth initialized successfully');
   return authInstance;
