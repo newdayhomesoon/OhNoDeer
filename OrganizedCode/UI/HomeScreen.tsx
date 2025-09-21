@@ -35,9 +35,11 @@ import { theme } from '../../src/app-theme';
 
 type HomeScreenProps = {
   onLogout: () => void;
+  userIsAnonymous?: boolean;
+  onShowLogin?: () => void;
 };
 
-export default function HomeScreen({onLogout}: HomeScreenProps) {
+export default function HomeScreen({onLogout, userIsAnonymous = false, onShowLogin}: HomeScreenProps) {
   const [showAnimalModal, setShowAnimalModal] = useState(false);
   const [showQuantityModal, setShowQuantityModal] = useState(false);
   const [showQuantityUpdateModal, setShowQuantityUpdateModal] = useState(false);
@@ -1022,7 +1024,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               {/* Profile Info Content */}
               {profileInfoTab === 'details' ? (
                 <View style={styles.profileInfoContent}>
-                  {isAnonymous ? (
+                  {userIsAnonymous ? (
                     <View style={styles.guestProfileContent}>
                       <Text style={styles.guestProfileTitle}>Guest Mode</Text>
                       <Text style={styles.guestProfileText}>
@@ -1084,7 +1086,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   )}
                 </View>
               ) : profileInfoTab === 'data' ? (
-                isAnonymous ? (
+                userIsAnonymous ? (
                   <View style={styles.profileInfoContent}>
                     <View style={styles.guestProfileContent}>
                       <Text style={styles.guestProfileTitle}>Personal Data</Text>
@@ -1146,7 +1148,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                   </ScrollView>
                 )
               ) : (
-                isAnonymous ? (
+                userIsAnonymous ? (
                   <View style={styles.profileInfoContent}>
                     <View style={styles.guestProfileContent}>
                       <Text style={styles.guestProfileTitle}>Account Security</Text>
@@ -1617,9 +1619,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
             style={[
               styles.actionButton, 
               styles.primaryButton,
-              isAnonymous && styles.disabledButton
+              userIsAnonymous && styles.disabledButton
             ]}
-            onPress={isAnonymous ? () => {
+            onPress={userIsAnonymous ? () => {
               showMessage({
                 type: 'info',
                 title: 'Sign In Required',
@@ -1628,7 +1630,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               });
             } : handleReportPress}>
             <Text style={styles.primaryButtonText}>
-              {isAnonymous ? 'View Only Mode' : 'Report Sighting'}
+              {userIsAnonymous ? 'View Only Mode' : 'Report Sighting'}
             </Text>
           </TouchableOpacity>
         </View>

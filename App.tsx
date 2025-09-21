@@ -17,6 +17,7 @@ function App(): JSX.Element {
   const [loggedIn, setLoggedIn] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [showLoginScreen, setShowLoginScreen] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   useEffect(() => {
     console.log('[DEBUG] App - Setting up auth state listener');
@@ -48,16 +49,20 @@ function App(): JSX.Element {
               console.error('[DEBUG] App - Anonymous sign-in failed:', error);
               // If anonymous sign-in fails, show the login screen
               setShowLoginScreen(true);
-              const isLoggedIn = false;
-              console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn);
-              setLoggedIn(isLoggedIn);
+              setLoggedIn(false);
+              setIsAnonymous(false);
             }
           } else {
             // User is signed in (either anonymous or authenticated)
             const isLoggedIn = true;
-            console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn);
+            const userIsAnonymous = user.isAnonymous;
+            console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn, 'isAnonymous:', userIsAnonymous);
             setLoggedIn(isLoggedIn);
-            setShowLoginScreen(false); // Hide login screen once user is authenticated
+            setIsAnonymous(userIsAnonymous);
+            // Don't hide login screen for anonymous users - let them choose to sign in
+            if (!userIsAnonymous) {
+              setShowLoginScreen(false);
+            }
           }
 
           if (!hasInitialized) {
@@ -103,7 +108,11 @@ function App(): JSX.Element {
       {showLoginScreen ? (
         <LoginScreen onLogin={() => setShowLoginScreen(false)} />
       ) : loggedIn ? (
-        <HomeScreen onLogout={() => setLoggedIn(false)} />
+        <HomeScreen 
+          onLogout={() => setLoggedIn(false)} 
+          userIsAnonymous={isAnonymous}
+          onShowLogin={() => setShowLoginScreen(true)}
+        />
       ) : (
         <View
           style={{
