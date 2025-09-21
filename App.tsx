@@ -16,6 +16,7 @@ import {auth, onAuthStateChange} from './OrganizedCode/Storage/firebase/service'
 function App(): JSX.Element {
   const [loggedIn, setLoggedIn] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [showLoginScreen, setShowLoginScreen] = useState(false);
 
   useEffect(() => {
     console.log('[DEBUG] App - Setting up auth state listener');
@@ -33,11 +34,31 @@ function App(): JSX.Element {
         }
 
         // Now set up the auth state listener
-        const unsubscribe = onAuthStateChange((user) => {
+        const unsubscribe = onAuthStateChange(async (user) => {
           console.log('[DEBUG] App - Auth state changed, user:', user?.uid, 'isAnonymous:', user?.isAnonymous);
-          const isLoggedIn = !!user;
-          console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn);
-          setLoggedIn(isLoggedIn);
+
+          if (!user) {
+            // No user is signed in, attempt anonymous sign-in
+            console.log('[DEBUG] App - No user found, attempting anonymous sign-in...');
+            try {
+              const { signInAnonymously } = await import('firebase/auth');
+              await signInAnonymously(auth);
+              console.log('[DEBUG] App - Anonymous sign-in initiated');
+            } catch (error) {
+              console.error('[DEBUG] App - Anonymous sign-in failed:', error);
+              // If anonymous sign-in fails, show the login screen
+              setShowLoginScreen(true);
+              const isLoggedIn = false;
+              console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn);
+              setLoggedIn(isLoggedIn);
+            }
+          } else {
+            // User is signed in (either anonymous or authenticated)
+            const isLoggedIn = true;
+            console.log('[DEBUG] App - Setting loggedIn to:', isLoggedIn);
+            setLoggedIn(isLoggedIn);
+            setShowLoginScreen(false); // Hide login screen once user is authenticated
+          }
 
           if (!hasInitialized) {
             console.log('[DEBUG] App - Setting initializing to false');
@@ -79,10 +100,20 @@ function App(): JSX.Element {
 
   return (
     <ErrorBoundary>
-      {!loggedIn ? (
-        <LoginScreen onLogin={() => setLoggedIn(true)} />
-      ) : (
+      {showLoginScreen ? (
+        <LoginScreen onLogin={() => setShowLoginScreen(false)} />
+      ) : loggedIn ? (
         <HomeScreen onLogout={() => setLoggedIn(false)} />
+      ) : (
+        <View
+          style={{
+            flex: 1,
+            justifyContent: 'center',
+            alignItems: 'center',
+            backgroundColor: '#0a1929',
+          }}>
+          <Text style={{color: '#fff', fontSize: 18}}>Signing in...</Text>
+        </View>
       )}
     </ErrorBoundary>
   );

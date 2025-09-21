@@ -1,10 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Wildlife reports - authenticated users can read/write their own reports
-    match /wildlife_reports/{reportId} {
-      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow create: if request.auth != null;
+    // Sightings collection - public read access, authenticated users can create/update their own
+    match /sightings/{sightingId} {
+      allow read: if true; // Public read access for all users including anonymous
+      allow create: if request.auth != null; // Only authenticated users can create sightings
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId; // Users can only modify their own sightings
     }
 
     // Users collection - users can read/write their own profile
@@ -12,9 +13,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Hotspots collection - read-only for authenticated users
+    // Hotspots collection - read-only for all users
     match /hotspots/{hotspotId} {
-      allow read: if request.auth != null;
+      allow read: if true; // Public read access
       allow write: if false; // Only functions can write to hotspots
     }
   }

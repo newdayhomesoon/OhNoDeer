@@ -56,6 +56,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   const [profileInfoTab, setProfileInfoTab] = useState<'details' | 'data' | 'security'>('details');
   const [userName, setUserName] = useState('Guest');
   const [userEmail, setUserEmail] = useState('guest@example.com');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [animalCounters, setAnimalCounters] = useState({
     deer: 0,
     bear: 0,
@@ -422,6 +423,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
     // Listen for authentication state changes
     const unsubscribe = onAuthStateChange((user) => {
       console.log('Auth state changed - User:', user?.uid, user?.email, user?.isAnonymous);
+      setIsAnonymous(user?.isAnonymous || false);
       loadUserProfile(user);
     });
     return unsubscribe;
@@ -1110,120 +1112,198 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
               {/* Profile Info Content */}
               {profileInfoTab === 'details' ? (
                 <View style={styles.profileInfoContent}>
-                  <View style={styles.userInfoSection}>
-                    <Text style={styles.userInfoLabel}>Name:</Text>
-                    <Text style={styles.userInfoValue}>{userName}</Text>
-                  </View>
-                  <View style={styles.userInfoSection}>
-                    <Text style={styles.userInfoLabel}>Email:</Text>
-                    <Text style={styles.userInfoValue}>{userEmail}</Text>
-                  </View>
-                  
-                  {/* Status moved here */}
-                  <View style={styles.statusSection}>
-                    <Text style={styles.statusText}>
-                      Status: {isPro ? 'Pro User' : 'Free User'}
-                    </Text>
-                    {isPro ? (
-                      <Text style={styles.proBadge}>⭐ Pro</Text>
-                    ) : (
+                  {isAnonymous ? (
+                    <View style={styles.guestProfileContent}>
+                      <Text style={styles.guestProfileTitle}>Guest Mode</Text>
+                      <Text style={styles.guestProfileText}>
+                        You're browsing as a guest. Sign in to access your personal profile and reporting history.
+                      </Text>
                       <TouchableOpacity
-                        style={styles.upgradeButton}
-                        onPress={handleUpgradePress}>
-                        <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                        style={styles.signInPromptButton}
+                        onPress={() => {
+                          showMessage({
+                            type: 'info',
+                            title: 'Sign In to Unlock Features',
+                            message: 'Create an account to report sightings, track your contributions, and access premium features.',
+                            buttons: [
+                              { text: 'Later', onPress: () => {} },
+                              { text: 'Sign In', onPress: handleLogout }
+                            ]
+                          });
+                        }}>
+                        <Text style={styles.signInPromptButtonText}>Sign In</Text>
                       </TouchableOpacity>
-                    )}
+                    </View>
+                  ) : (
+                    <>
+                      <View style={styles.userInfoSection}>
+                        <Text style={styles.userInfoLabel}>Name:</Text>
+                        <Text style={styles.userInfoValue}>{userName}</Text>
+                      </View>
+                      <View style={styles.userInfoSection}>
+                        <Text style={styles.userInfoLabel}>Email:</Text>
+                        <Text style={styles.userInfoValue}>{userEmail}</Text>
+                      </View>
+                      
+                      {/* Status moved here */}
+                      <View style={styles.statusSection}>
+                        <Text style={styles.statusText}>
+                          Status: {isPro ? 'Pro User' : 'Free User'}
+                        </Text>
+                        {isPro ? (
+                          <Text style={styles.proBadge}>⭐ Pro</Text>
+                        ) : (
+                          <TouchableOpacity
+                            style={styles.upgradeButton}
+                            onPress={handleUpgradePress}>
+                            <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          style={styles.manageSubscriptionButton}
+                          onPress={() => showMessage({
+                            type: 'info',
+                            title: 'Coming Soon',
+                            message: 'Subscription management will be available soon!',
+                            buttons: [{ text: 'OK', onPress: () => {} }]
+                          })}>
+                          <Text style={styles.manageSubscriptionButtonText}>Manage Subscription</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </>
+                  )}
+                </View>
+              ) : profileInfoTab === 'data' ? (
+                isAnonymous ? (
+                  <View style={styles.profileInfoContent}>
+                    <View style={styles.guestProfileContent}>
+                      <Text style={styles.guestProfileTitle}>Personal Data</Text>
+                      <Text style={styles.guestProfileText}>
+                        Sign in to view your sighting history and contribution statistics.
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.signInPromptButton}
+                        onPress={() => {
+                          showMessage({
+                            type: 'info',
+                            title: 'Sign In to View Data',
+                            message: 'Access your personal wildlife reporting history and statistics.',
+                            buttons: [
+                              { text: 'Later', onPress: () => {} },
+                              { text: 'Sign In', onPress: handleLogout }
+                            ]
+                          });
+                        }}>
+                        <Text style={styles.signInPromptButtonText}>Sign In</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <ScrollView style={styles.profileInfoContent} showsVerticalScrollIndicator={false}>
+                    <Text style={styles.subSectionTitle}>Animal Sightings</Text>
+                    <View style={styles.animalCountersTable}>
+                      <View style={styles.counterRow}>
+                        <Text style={styles.counterLabel}>Deer:</Text>
+                        <Text style={styles.counterValue}>{animalCounters.deer}</Text>
+                      </View>
+                      <View style={styles.counterRow}>
+                        <Text style={styles.counterLabel}>Bear:</Text>
+                        <Text style={styles.counterValue}>{animalCounters.bear}</Text>
+                      </View>
+                      <View style={styles.counterRow}>
+                        <Text style={styles.counterLabel}>Moose:</Text>
+                        <Text style={styles.counterValue}>{animalCounters.moose_elk}</Text>
+                      </View>
+                      <View style={styles.counterRow}>
+                        <Text style={styles.counterLabel}>Small Mammals:</Text>
+                        <Text style={styles.counterValue}>{animalCounters.small_mammals}</Text>
+                      </View>
+                    </View>
+
+                    <Text style={styles.subSectionTitle}>Recent Reports</Text>
+                    <View style={styles.recentReportsList}>
+                      {recentSightings.slice(0, 3).map((sighting, index) => (
+                        <View key={index} style={styles.recentReportItem}>
+                          <Text style={styles.recentReportText}>
+                            {sighting.type.charAt(0).toUpperCase() + sighting.type.slice(1)}- {sighting.quantity} Reported, {formatLocation(sighting.location.latitude, sighting.location.longitude)}
+                          </Text>
+                          <Text style={styles.recentReportDate}>
+                            {formatDateTime(sighting.timestamp)}
+                          </Text>
+                        </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+                )
+              ) : (
+                isAnonymous ? (
+                  <View style={styles.profileInfoContent}>
+                    <View style={styles.guestProfileContent}>
+                      <Text style={styles.guestProfileTitle}>Account Security</Text>
+                      <Text style={styles.guestProfileText}>
+                        Sign in to manage your account security settings.
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.signInPromptButton}
+                        onPress={() => {
+                          showMessage({
+                            type: 'info',
+                            title: 'Sign In for Security',
+                            message: 'Access account security features like password changes and data management.',
+                            buttons: [
+                              { text: 'Later', onPress: () => {} },
+                              { text: 'Sign In', onPress: handleLogout }
+                            ]
+                          });
+                        }}>
+                        <Text style={styles.signInPromptButtonText}>Sign In</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ) : (
+                  <View style={styles.profileInfoContent}>
                     <TouchableOpacity
-                      style={styles.manageSubscriptionButton}
+                      style={styles.securityButton}
                       onPress={() => showMessage({
                         type: 'info',
                         title: 'Coming Soon',
-                        message: 'Subscription management will be available soon!',
+                        message: 'Password change functionality will be available soon!',
                         buttons: [{ text: 'OK', onPress: () => {} }]
                       })}>
-                      <Text style={styles.manageSubscriptionButtonText}>Manage Subscription</Text>
+                      <Text style={styles.securityButtonText}>Change Password</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={styles.deleteAccountButton}
+                      onPress={() => {
+                        showMessage({
+                          type: 'warning',
+                          title: 'Delete Account',
+                          message: 'Are you sure you want to delete your account? This action cannot be undone.',
+                          buttons: [
+                            { text: 'No, go back', onPress: () => {}, style: 'cancel' },
+                            { text: 'Yes', onPress: () => {
+                              showMessage({
+                                type: 'success',
+                                title: 'Account Deleted',
+                                message: 'Your account has been deleted.',
+                                buttons: [{ text: 'OK', onPress: () => {} }]
+                              });
+                              // In a real app, this would call an API to delete the account
+                            }, style: 'destructive' }
+                          ]
+                        });
+                      }}>
+                      <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={styles.logoutButtonOrange}
+                      onPress={handleLogout}>
+                      <Text style={styles.logoutButtonOrangeText}>Log Out</Text>
                     </TouchableOpacity>
                   </View>
-                </View>
-              ) : profileInfoTab === 'data' ? (
-                <ScrollView style={styles.profileInfoContent} showsVerticalScrollIndicator={false}>
-                  <Text style={styles.subSectionTitle}>Animal Sightings</Text>
-                  <View style={styles.animalCountersTable}>
-                    <View style={styles.counterRow}>
-                      <Text style={styles.counterLabel}>Deer:</Text>
-                      <Text style={styles.counterValue}>{animalCounters.deer}</Text>
-                    </View>
-                    <View style={styles.counterRow}>
-                      <Text style={styles.counterLabel}>Bear:</Text>
-                      <Text style={styles.counterValue}>{animalCounters.bear}</Text>
-                    </View>
-                    <View style={styles.counterRow}>
-                      <Text style={styles.counterLabel}>Moose:</Text>
-                      <Text style={styles.counterValue}>{animalCounters.moose_elk}</Text>
-                    </View>
-                    <View style={styles.counterRow}>
-                      <Text style={styles.counterLabel}>Small Mammals:</Text>
-                      <Text style={styles.counterValue}>{animalCounters.small_mammals}</Text>
-                    </View>
-                  </View>
-
-                  <Text style={styles.subSectionTitle}>Recent Reports</Text>
-                  <View style={styles.recentReportsList}>
-                    {recentSightings.slice(0, 3).map((sighting, index) => (
-                      <View key={index} style={styles.recentReportItem}>
-                        <Text style={styles.recentReportText}>
-                          {sighting.type.charAt(0).toUpperCase() + sighting.type.slice(1)}- {sighting.quantity} Reported, {formatLocation(sighting.location.latitude, sighting.location.longitude)}
-                        </Text>
-                        <Text style={styles.recentReportDate}>
-                          {formatDateTime(sighting.timestamp)}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                </ScrollView>
-              ) : (
-                <View style={styles.profileInfoContent}>
-                  <TouchableOpacity
-                    style={styles.securityButton}
-                    onPress={() => showMessage({
-                      type: 'info',
-                      title: 'Coming Soon',
-                      message: 'Password change functionality will be available soon!',
-                      buttons: [{ text: 'OK', onPress: () => {} }]
-                    })}>
-                    <Text style={styles.securityButtonText}>Change Password</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={styles.deleteAccountButton}
-                    onPress={() => {
-                      showMessage({
-                        type: 'warning',
-                        title: 'Delete Account',
-                        message: 'Are you sure you want to delete your account? This action cannot be undone.',
-                        buttons: [
-                          { text: 'No, go back', onPress: () => {}, style: 'cancel' },
-                          { text: 'Yes', onPress: () => {
-                            showMessage({
-                              type: 'success',
-                              title: 'Account Deleted',
-                              message: 'Your account has been deleted.',
-                              buttons: [{ text: 'OK', onPress: () => {} }]
-                            });
-                            // In a real app, this would call an API to delete the account
-                          }, style: 'destructive' }
-                        ]
-                      });
-                    }}>
-                    <Text style={styles.deleteAccountButtonText}>Delete Account</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={styles.logoutButtonOrange}
-                    onPress={handleLogout}>
-                    <Text style={styles.logoutButtonOrangeText}>Log Out</Text>
-                  </TouchableOpacity>
-                </View>
+                )
               )}
             </View>
           ) : activeTab === 'settings' ? (
@@ -1624,9 +1704,22 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
         <View style={styles.actionButtons}>
           <TouchableOpacity
-            style={[styles.actionButton, styles.primaryButton]}
-            onPress={handleReportPress}>
-            <Text style={styles.primaryButtonText}>Report Sighting</Text>
+            style={[
+              styles.actionButton, 
+              styles.primaryButton,
+              isAnonymous && styles.disabledButton
+            ]}
+            onPress={isAnonymous ? () => {
+              showMessage({
+                type: 'info',
+                title: 'Sign In Required',
+                message: 'Please sign in to report wildlife sightings. Guest users can only view existing sightings.',
+                buttons: [{ text: 'OK', onPress: () => {} }]
+              });
+            } : handleReportPress}>
+            <Text style={styles.primaryButtonText}>
+              {isAnonymous ? 'View Only Mode' : 'Report Sighting'}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -1828,6 +1921,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  disabledButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    opacity: 0.6,
   },
   secondaryButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -2588,6 +2685,39 @@ const styles = StyleSheet.create({
     fontSize: theme.fontSize.body,
     textAlign: 'center',
     lineHeight: 20,
+    fontFamily: theme.fontFamily.openSans,
+  },
+  guestProfileContent: {
+    alignItems: 'center',
+    paddingVertical: theme.spacing.xl,
+  },
+  guestProfileTitle: {
+    fontSize: theme.fontSize.h3,
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.m,
+    fontFamily: theme.fontFamily.lato,
+  },
+  guestProfileText: {
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: theme.spacing.l,
+    lineHeight: 24,
+    fontFamily: theme.fontFamily.openSans,
+  },
+  signInPromptButton: {
+    backgroundColor: theme.colors.accent,
+    paddingVertical: theme.spacing.m,
+    paddingHorizontal: theme.spacing.l,
+    borderRadius: theme.spacing.s,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  signInPromptButtonText: {
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.body,
+    fontWeight: '600',
     fontFamily: theme.fontFamily.openSans,
   },
 });
