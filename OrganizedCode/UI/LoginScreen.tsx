@@ -271,6 +271,7 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
           source={{uri: 'temp_bg'}}
           style={StyleSheet.absoluteFillObject}
           resizeMode="cover"
+          onError={(error) => console.log('Background image load error:', error.nativeEvent)}
         />
       </View>
 

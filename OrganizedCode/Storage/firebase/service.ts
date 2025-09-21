@@ -118,7 +118,7 @@ export const auth = (() => {
       })
       .catch((error) => {
         console.error('[DEBUG] Failed to set auth persistence:', error);
-        persistenceError = error;
+        persistenceError = error instanceof Error ? error : new Error(String(error));
         persistenceSet = false;
         // Don't throw - allow the app to continue without persistence
         console.warn('[DEBUG] Authentication will work but login state may not persist across app restarts');
@@ -127,7 +127,7 @@ export const auth = (() => {
     console.error('[DEBUG] Error initializing persistence:', error);
     persistencePromise = Promise.resolve(); // Continue without persistence
     persistenceSet = false;
-    persistenceError = error;
+    persistenceError = error instanceof Error ? error : new Error(String(error));
   }
 
   // Store the promise and status so other parts of the code can check
