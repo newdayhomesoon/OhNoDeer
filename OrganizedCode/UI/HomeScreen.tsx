@@ -425,7 +425,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       loadUserProfile(user);
     });
     return unsubscribe;
-  }, [activeTab]);
+  }, []);
 
   // Save settings to AsyncStorage
   const saveSettings = async (newSettings: any) => {
