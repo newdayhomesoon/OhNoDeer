@@ -84,24 +84,12 @@ workflows:
     name: CI Diagnostics
     environment:
       vars:
-        FIREBASE_API_KEY:
-          value: ""
-          description: "Firebase API Key (set in Codemagic environment)"
-        FIREBASE_AUTH_DOMAIN:
-          value: ""
-          description: "Firebase authDomain"
-        FIREBASE_PROJECT_ID:
-          value: ""
-          description: "Firebase projectId"
-        FIREBASE_STORAGE_BUCKET:
-          value: ""
-          description: "Firebase storageBucket"
-        FIREBASE_MESSAGING_SENDER_ID:
-          value: ""
-          description: "Firebase messagingSenderId"
-        FIREBASE_APP_ID:
-          value: ""
-          description: "Firebase appId"
+        FIREBASE_API_KEY: ""
+        FIREBASE_AUTH_DOMAIN: ""
+        FIREBASE_PROJECT_ID: ""
+        FIREBASE_STORAGE_BUCKET: ""
+        FIREBASE_MESSAGING_SENDER_ID: ""
+        FIREBASE_APP_ID: ""
     scripts:
       - name: Install dependencies
         script: |
@@ -162,7 +150,6 @@ workflows:
           echo "Uploading artifacts (APK and logs)"
           ls -la android/app/build/outputs/apk/debug || true
           ls -la codemagic-logcat.txt || true
-    publishing:
-      artifacts:
-        - android/app/build/outputs/apk/debug/*.apk
-        - codemagic-logcat.txt
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+      - codemagic-logcat.txt
