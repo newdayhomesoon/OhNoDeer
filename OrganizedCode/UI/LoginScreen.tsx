@@ -267,7 +267,11 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
     <View style={styles.background}>
       {/* Future background image container - add Image component here later */}
       <View style={styles.backgroundImageContainer}>
-        {/* Background image will be added here */}
+        <Image
+          source={{uri: 'temp_bg'}}
+          style={StyleSheet.absoluteFillObject}
+          resizeMode="cover"
+        />
       </View>
 
       {/* Semi-transparent overlay for text readability */}
@@ -452,7 +456,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    // Future: Add Image component here with resizeMode: 'cover'
   },
   backgroundOverlay: {
     position: 'absolute',
