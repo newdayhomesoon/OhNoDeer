@@ -44,7 +44,8 @@ class ErrorBoundary extends Component<Props, State> {
 
     console.error(
       'Detailed error information:',
-      JSON.stringify(errorDetails, null, 2),
+      JSON.stringify(errorDetails, null, 2)
+    );
 
     // You could send this to a crash reporting service
     // crashlytics().recordError(error);
