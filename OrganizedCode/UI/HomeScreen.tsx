@@ -25,6 +25,7 @@ import SubscriptionScreen from './SubscriptionScreen';
 // import AdBanner from './AdBanner'; // Temporarily disabled
 import WildlifeMap from './WildlifeMap';
 import ErrorBoundary from './ErrorBoundary';
+import DebugStorageScreen from './DebugStorageScreen';
 import {auth, getCurrentUser, onAuthStateChange, createUserProfile} from '../Storage/firebase/service';
 import {
   WildlifeReportsService,
@@ -99,6 +100,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
   // Help state variables
   const [helpTab, setHelpTab] = useState<'contact' | 'faq'>('contact');
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showDebugStorage, setShowDebugStorage] = useState(false);
   const [showGuestModal, setShowGuestModal] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [email, setEmail] = useState('');
@@ -1085,6 +1087,11 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         </View>
 
         <View style={styles.mapContainer}>
+          {__DEV__ && (
+            <TouchableOpacity style={styles.debugFloating} onPress={() => setShowDebugStorage(true)}>
+              <Text style={{color: '#fff', fontSize: 12}}>DBG</Text>
+            </TouchableOpacity>
+          )}
           {activeTab === 'map' ? (
             <View style={styles.mapWithAdsContainer}>
               {/* Fullscreen (enlarge) button */}
@@ -1894,6 +1901,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
           onSelect={handleAnimalSelect}
           onClose={() => setShowAnimalModal(false)}
         />
+
+        {__DEV__ && (
+          <DebugStorageScreen visible={showDebugStorage} onClose={() => setShowDebugStorage(false)} />
+        )}
 
         {selectedAnimal && showQuantityModal && (
           <QuantitySelectionModal
