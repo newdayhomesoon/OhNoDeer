@@ -29,11 +29,7 @@ export interface SightingReport {
   status?: 'reported' | 'verified';
 }
 
-export type AnimalCategory =
-  | 'deer'
-  | 'bear'
-  | 'moose_elk'
-  | 'small_mammals';
+export type AnimalCategory = 'deer' | 'bear' | 'moose_elk' | 'small_mammals';
 
 export const AnimalCategories: Record<
   AnimalCategory,

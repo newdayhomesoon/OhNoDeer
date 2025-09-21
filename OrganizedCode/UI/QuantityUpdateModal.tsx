@@ -7,8 +7,8 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import { theme } from '../../src/app-theme';
-import { AnimalType } from '../CoreLogic/types';
+import {theme} from '../../src/app-theme';
+import {AnimalType} from '../CoreLogic/types';
 
 interface QuantityUpdateModalProps {
   visible: boolean;
@@ -35,12 +35,12 @@ const QuantityUpdateModal: React.FC<QuantityUpdateModalProps> = ({
   };
 
   const wildlifeOptions = [
-    { key: 'deer', label: 'Deer', icon: '🦌' },
-    { key: 'bear', label: 'Bear', icon: '🐻' },
-    { key: 'moose_elk', label: 'Moose', icon: '🫎' },
-    { key: 'raccoon', label: 'Raccoon', icon: '🦝' },
-    { key: 'rabbit', label: 'Rabbit', icon: '🐰' },
-    { key: 'small_mammals', label: 'Small Mammals', icon: '🐿️' },
+    {key: 'deer', label: 'Deer', icon: '🦌'},
+    {key: 'bear', label: 'Bear', icon: '🐻'},
+    {key: 'moose_elk', label: 'Moose', icon: '🫎'},
+    {key: 'raccoon', label: 'Raccoon', icon: '🦝'},
+    {key: 'rabbit', label: 'Rabbit', icon: '🐰'},
+    {key: 'small_mammals', label: 'Small Mammals', icon: '🐿️'},
   ];
 
   const quantities = [1, 2, 3, 4, 5];
@@ -54,20 +54,23 @@ const QuantityUpdateModal: React.FC<QuantityUpdateModalProps> = ({
       <View style={styles.overlay}>
         <View style={styles.modal}>
           <Text style={styles.title}>Please choose what you saw</Text>
-          
+
           {/* Success Message */}
           <View style={styles.successContainer}>
             <Text style={styles.successIcon}>✅</Text>
             <Text style={styles.successTitle}>Report Submitted!</Text>
             <Text style={styles.successMessage}>
-              Your wildlife sighting has been reported. Please provide more details below.
+              Your wildlife sighting has been reported. Please provide more
+              details below.
             </Text>
           </View>
 
           {/* Wildlife Selection */}
-          <Text style={styles.sectionTitle}>What type of wildlife did you see?</Text>
+          <Text style={styles.sectionTitle}>
+            What type of wildlife did you see?
+          </Text>
           <View style={styles.wildlifeContainer}>
-            {wildlifeOptions.map((option) => (
+            {wildlifeOptions.map(option => (
               <TouchableOpacity
                 key={option.key}
                 style={[
@@ -79,7 +82,8 @@ const QuantityUpdateModal: React.FC<QuantityUpdateModalProps> = ({
                 <Text
                   style={[
                     styles.wildlifeText,
-                    selectedAnimal === option.key && styles.selectedWildlifeText,
+                    selectedAnimal === option.key &&
+                      styles.selectedWildlifeText,
                   ]}>
                   {option.label}
                 </Text>

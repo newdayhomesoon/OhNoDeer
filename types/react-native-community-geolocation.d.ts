@@ -33,13 +33,13 @@ declare module '@react-native-community/geolocation' {
   export function getCurrentPosition(
     success: (position: GeolocationPosition) => void,
     error?: (error: GeolocationError) => void,
-    options?: GeolocationOptions
+    options?: GeolocationOptions,
   ): void;
 
   export function watchPosition(
     success: (position: GeolocationPosition) => void,
     error?: (error: GeolocationError) => void,
-    options?: GeolocationOptions
+    options?: GeolocationOptions,
   ): number;
 
   export function clearWatch(watchId: number): void;

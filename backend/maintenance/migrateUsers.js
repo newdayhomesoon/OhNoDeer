@@ -14,24 +14,30 @@ const admin = require('firebase-admin');
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const opts = { deleteOld: false, projectId: undefined, creds: undefined };
+  const opts = {deleteOld: false, projectId: undefined, creds: undefined};
   for (let i = 0; i < args.length; i++) {
     const a = args[i];
-    if (a === '--deleteOld') opts.deleteOld = true;
-    else if (a === '--project') opts.projectId = args[++i];
-    else if (a === '--creds') opts.creds = args[++i];
+    if (a === '--deleteOld') {
+      opts.deleteOld = true;
+    } else if (a === '--project') {
+      opts.projectId = args[++i];
+    } else if (a === '--creds') {
+      opts.creds = args[++i];
+    }
   }
   return opts;
 }
 
 async function main() {
-  const { deleteOld, projectId, creds } = parseArgs();
+  const {deleteOld, projectId, creds} = parseArgs();
   try {
     if (creds) {
       process.env.GOOGLE_APPLICATION_CREDENTIALS = creds;
     }
     if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-      throw new Error('Provide service account with --creds path or GOOGLE_APPLICATION_CREDENTIALS');
+      throw new Error(
+        'Provide service account with --creds path or GOOGLE_APPLICATION_CREDENTIALS',
+      );
     }
 
     admin.initializeApp({
@@ -48,11 +54,15 @@ async function main() {
     for (const doc of snap.docs) {
       const data = doc.data() || {};
       const authId = data.authId;
-      if (!authId || typeof authId !== 'string') continue;
-      if (doc.id === authId) continue; // already aligned
+      if (!authId || typeof authId !== 'string') {
+        continue;
+      }
+      if (doc.id === authId) {
+        continue;
+      } // already aligned
 
       const targetRef = db.collection('users').doc(authId);
-      await targetRef.set({ ...data, authId }, { merge: true });
+      await targetRef.set({...data, authId}, {merge: true});
       migrated++;
       console.log(`Migrated ${doc.id} -> ${authId}`);
 

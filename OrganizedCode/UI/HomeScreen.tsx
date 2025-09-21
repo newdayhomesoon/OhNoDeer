@@ -82,6 +82,83 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
   const { showMessage } = useMessageModal();
 
+  // Helper functions for caching sightings data
+  const saveSightingsToCache = async (sightings: SightingReport[]) => {
+    try {
+      const cacheData = {
+        sightings,
+        timestamp: Date.now(),
+        userId: getCurrentUser()?.uid
+      };
+      await AsyncStorage.setItem('cachedSightings', JSON.stringify(cacheData));
+      console.log('[DEBUG] Sightings cached successfully:', sightings.length);
+    } catch (error) {
+      console.warn('[DEBUG] Failed to cache sightings:', error);
+    }
+  };
+
+  const loadSightingsFromCache = async (): Promise<SightingReport[] | null> => {
+    try {
+      const cachedData = await AsyncStorage.getItem('cachedSightings');
+      if (!cachedData) return null;
+
+      const parsed = JSON.parse(cachedData);
+      const currentUserId = getCurrentUser()?.uid;
+
+      // Check if cache is for current user and not too old (24 hours)
+      if (parsed.userId === currentUserId && 
+          Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+        console.log('[DEBUG] Loaded valid cached sightings:', parsed.sightings.length);
+        return parsed.sightings;
+      } else {
+        console.log('[DEBUG] Cached sightings expired or for different user, clearing cache');
+        await AsyncStorage.removeItem('cachedSightings');
+        return null;
+      }
+    } catch (error) {
+      console.warn('[DEBUG] Failed to load cached sightings:', error);
+      return null;
+    }
+  };
+
+  const saveCountersToCache = async (counters: typeof animalCounters) => {
+    try {
+      const cacheData = {
+        counters,
+        timestamp: Date.now(),
+        userId: getCurrentUser()?.uid
+      };
+      await AsyncStorage.setItem('cachedCounters', JSON.stringify(cacheData));
+      console.log('[DEBUG] Counters cached successfully');
+    } catch (error) {
+      console.warn('[DEBUG] Failed to cache counters:', error);
+    }
+  };
+
+  const loadCountersFromCache = async (): Promise<typeof animalCounters | null> => {
+    try {
+      const cachedData = await AsyncStorage.getItem('cachedCounters');
+      if (!cachedData) return null;
+
+      const parsed = JSON.parse(cachedData);
+      const currentUserId = getCurrentUser()?.uid;
+
+      // Check if cache is for current user and not too old (24 hours)
+      if (parsed.userId === currentUserId && 
+          Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
+        console.log('[DEBUG] Loaded valid cached counters');
+        return parsed.counters;
+      } else {
+        console.log('[DEBUG] Cached counters expired or for different user, clearing cache');
+        await AsyncStorage.removeItem('cachedCounters');
+        return null;
+      }
+    } catch (error) {
+      console.warn('[DEBUG] Failed to load cached counters:', error);
+      return null;
+    }
+  };
+
   // Removed: useEffect for sightings tab
 
   useEffect(() => {
@@ -310,6 +387,14 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
             setUserName(currentUser.displayName || currentUser.email?.split('@')[0] || 'User');
             setUserEmail(currentUser.email || 'No email');
           }
+          
+          // Load cached counters first for immediate UI update
+          const cachedCounters = await loadCountersFromCache();
+          if (cachedCounters) {
+            console.log('Using cached counters:', cachedCounters);
+            setAnimalCounters(cachedCounters);
+          }
+          
           // Load sightings after user is authenticated
           console.log('Loading sightings after auth...');
           await loadRecentSightings();
@@ -323,6 +408,14 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         setUserName('Guest');
         setUserEmail('guest@example.com');
         setRecentSightings([]);
+        setAnimalCounters({
+          deer: 0,
+          bear: 0,
+          moose_elk: 0,
+          raccoon: 0,
+          rabbit: 0,
+          small_mammals: 0,
+        });
       }
     };
 
@@ -404,6 +497,13 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         return;
       }
 
+      // Try to load cached sightings first
+      const cachedSightings = await loadSightingsFromCache();
+      if (cachedSightings && cachedSightings.length > 0) {
+        console.log('[DEBUG] Using cached sightings:', cachedSightings.length);
+        setRecentSightings(cachedSightings);
+      }
+
       console.log('[DEBUG] User authenticated, fetching recent sightings from all users...');
       const sightings = await WildlifeReportsService.getRecentSightings(12, currentLocation ? {
         latitude: currentLocation.latitude,
@@ -426,7 +526,9 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       });
       
       setRecentSightings(sightings);
-      console.log('[DEBUG] Recent sightings state updated:', sightings);
+      // Cache the sightings data
+      await saveSightingsToCache(sightings);
+      console.log('[DEBUG] Recent sightings state updated and cached:', sightings);
       
       // Calculate animal counters based on user's own reports
       const userSightings = await WildlifeReportsService.getUserReports(50);
@@ -446,9 +548,18 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       });
       console.log('[DEBUG] Calculated animal counters:', counters);
       setAnimalCounters(counters);
+      // Cache the counters
+      await saveCountersToCache(counters);
     } catch (error) {
       console.error('[DEBUG] Error loading recent sightings:', error);
-      setRecentSightings([]);
+      // Try to use cached data as fallback
+      const cachedSightings = await loadSightingsFromCache();
+      if (cachedSightings && cachedSightings.length > 0) {
+        console.log('[DEBUG] Using cached sightings as fallback');
+        setRecentSightings(cachedSightings);
+      } else {
+        setRecentSightings([]);
+      }
       showMessage({
         type: 'error',
         title: 'Error',

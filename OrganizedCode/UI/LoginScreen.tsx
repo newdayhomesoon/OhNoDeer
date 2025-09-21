@@ -23,12 +23,9 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
-  setPersistence,
 } from 'firebase/auth';
-import { getReactNativePersistence } from 'firebase/auth/react-native';
 import {auth, createUserProfile} from '../Storage/firebase/service';
 import {AuthService} from '../Storage/wildlifeReportsService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMessageModal } from './useMessageModal';
 import { theme } from '../../src/app-theme';
 
@@ -112,9 +109,6 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
       // Create Firebase credential
       const googleCredential = GoogleAuthProvider.credential(idToken);
 
-      // Ensure persistence is set before signing in
-      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
-
       // Sign in to Firebase
       const result = await signInWithCredential(auth, googleCredential);
 
@@ -161,9 +155,6 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
         idToken: identityToken, // identityToken is non-null after guard
         rawNonce: nonce || undefined,
       });
-
-      // Ensure persistence is set before signing in
-      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
 
       // Sign in to Firebase
       const result = await signInWithCredential(auth, appleCredential);
@@ -225,9 +216,6 @@ export default function LoginScreen({onLogin}: LoginScreenProps) {
     }
     setLoading(true);
     try {
-      // Ensure persistence is set before signing in
-      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
-
       let userCred;
       if (emailMode === 'login') {
         try {

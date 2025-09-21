@@ -42,8 +42,10 @@ class ErrorBoundary extends Component<Props, State> {
       timestamp: new Date().toISOString(),
     };
 
-    console.error('Detailed error information:', JSON.stringify(errorDetails, null, 2));
-    
+    console.error(
+      'Detailed error information:',
+      JSON.stringify(errorDetails, null, 2),
+
     // You could send this to a crash reporting service
     // crashlytics().recordError(error);
   };
@@ -61,24 +63,27 @@ class ErrorBoundary extends Component<Props, State> {
       // Safely format the error message and stack
       const errorMessage = this.state.error.message || 'Unknown error';
       const errorStack = this.state.error.stack || 'No stack trace available';
-      
+
       // Clean the stack trace to avoid text rendering issues
       const cleanStack = errorStack
         .replace(/\s+/g, ' ')
         .replace(/[^\x20-\x7E]/g, '')
         .substring(0, 300);
-      
+
       Alert.alert(
         'Error Details',
         `${errorMessage}\n\nStack: ${cleanStack}...`,
         [
-          {text: 'Copy to Clipboard', onPress: () => {
-            console.log('Error details copied to clipboard');
-            console.log(`Error: ${errorMessage}`);
-            console.log(`Stack: ${errorStack}`);
-          }},
+          {
+            text: 'Copy to Clipboard',
+            onPress: () => {
+              console.log('Error details copied to clipboard');
+              console.log(`Error: ${errorMessage}`);
+              console.log(`Stack: ${errorStack}`);
+            },
+          },
           {text: 'OK'},
-        ]
+        ],
       );
     }
   };
@@ -95,15 +100,20 @@ class ErrorBoundary extends Component<Props, State> {
           <View style={styles.errorContainer}>
             <Text style={styles.errorTitle}>Something went wrong</Text>
             <Text style={styles.errorMessage}>
-              The app encountered an unexpected error. This is usually temporary.
+              The app encountered an unexpected error. This is usually
+              temporary.
             </Text>
-            
+
             <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.restartButton} onPress={this.handleRestart}>
+              <TouchableOpacity
+                style={styles.restartButton}
+                onPress={this.handleRestart}>
                 <Text style={styles.restartButtonText}>Try Again</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.detailsButton} onPress={this.handleShowDetails}>
+
+              <TouchableOpacity
+                style={styles.detailsButton}
+                onPress={this.handleShowDetails}>
                 <Text style={styles.detailsButtonText}>Show Details</Text>
               </TouchableOpacity>
             </View>

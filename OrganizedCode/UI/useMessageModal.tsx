@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import MessageModal, { MessageType, MessageModalProps } from './MessageModal';
+import {useState} from 'react';
+import MessageModal, {MessageType, MessageModalProps} from './MessageModal';
 
 export interface MessageOptions {
   type?: MessageType;
@@ -18,11 +18,11 @@ export const useMessageModal = () => {
     type: 'info',
     title: '',
     message: '',
-    buttons: [{ text: 'OK', onPress: () => {} }],
+    buttons: [{text: 'OK', onPress: () => {}}],
   });
 
   const showMessage = (options: MessageOptions) => {
-    const { type = 'info', title, message, buttons = [{ text: 'OK' }] } = options;
+    const {type = 'info', title, message, buttons = [{text: 'OK'}]} = options;
 
     setModalProps({
       visible: true,
@@ -42,7 +42,7 @@ export const useMessageModal = () => {
   };
 
   const hideMessage = () => {
-    setModalProps(prev => ({ ...prev, visible: false }));
+    setModalProps(prev => ({...prev, visible: false}));
   };
 
   const MessageModalComponent = () => {
@@ -65,11 +65,13 @@ export const showAlert = (
     onPress?: () => void;
     style?: 'default' | 'cancel' | 'destructive';
   }>,
-  type: MessageType = 'info'
+  type: MessageType = 'info',
 ) => {
   // This would need to be called from a component that has access to the modal
   // For now, we'll create a global instance
-  console.warn('showAlert called - this should be replaced with useMessageModal hook in components');
+  console.warn(
+    'showAlert called - this should be replaced with useMessageModal hook in components',
+  );
 };
 
 // Helper functions for common alert types

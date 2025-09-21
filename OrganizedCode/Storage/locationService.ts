@@ -64,11 +64,12 @@ class LocationService {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
           {
             title: 'Location Permission',
-            message: 'This app needs access to your location to report wildlife sightings.',
+            message:
+              'This app needs access to your location to report wildlife sightings.',
             buttonNeutral: 'Ask Me Later',
             buttonNegative: 'Cancel',
             buttonPositive: 'OK',
-          }
+          },
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       }
@@ -89,7 +90,7 @@ class LocationService {
         return true;
       } else if (Platform.OS === 'android') {
         const granted = await PermissionsAndroid.check(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
         return granted;
       }
@@ -103,8 +104,10 @@ class LocationService {
   /**
    * Get current location with comprehensive error handling
    */
-  async getCurrentLocation(config?: Partial<LocationServiceConfig>): Promise<LocationData> {
-    const finalConfig = { ...this.defaultConfig, ...config };
+  async getCurrentLocation(
+    config?: Partial<LocationServiceConfig>,
+  ): Promise<LocationData> {
+    const finalConfig = {...this.defaultConfig, ...config};
 
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
@@ -116,7 +119,7 @@ class LocationService {
       }, finalConfig.timeout);
 
       Geolocation.getCurrentPosition(
-        (position) => {
+        position => {
           clearTimeout(timeoutId);
           const location: LocationData = {
             latitude: position.coords.latitude,
@@ -131,7 +134,7 @@ class LocationService {
           console.log('Location obtained:', location);
           resolve(location);
         },
-        (error) => {
+        error => {
           clearTimeout(timeoutId);
           console.error('Location error:', error);
 
@@ -155,7 +158,7 @@ class LocationService {
           maximumAge: finalConfig.maximumAge,
           distanceFilter: finalConfig.distanceFilter,
           useSignificantChanges: finalConfig.useSignificantChanges,
-        }
+        },
       );
     });
   }
@@ -166,17 +169,17 @@ class LocationService {
   startWatchingLocation(
     config?: Partial<LocationServiceConfig>,
     onLocation?: (location: LocationData) => void,
-    onError?: (error: LocationError) => void
+    onError?: (error: LocationError) => void,
   ): void {
     if (this.isWatching) {
       console.warn('Location watching already started');
       return;
     }
 
-    const finalConfig = { ...this.defaultConfig, ...config };
+    const finalConfig = {...this.defaultConfig, ...config};
 
     this.watchId = Geolocation.watchPosition(
-      (position) => {
+      position => {
         const location: LocationData = {
           latitude: position.coords.latitude,
           longitude: position.coords.longitude,
@@ -203,7 +206,7 @@ class LocationService {
           }
         });
       },
-      (error) => {
+      error => {
         console.error('Location watch error:', error);
 
         const locationError: LocationError = {
@@ -232,7 +235,7 @@ class LocationService {
         maximumAge: finalConfig.maximumAge,
         distanceFilter: finalConfig.distanceFilter,
         useSignificantChanges: finalConfig.useSignificantChanges,
-      }
+      },
     );
 
     this.isWatching = true;
@@ -324,7 +327,7 @@ class LocationService {
   getFallbackLocation(): LocationData {
     return {
       latitude: 40.7128,
-      longitude: -74.0060,
+      longitude: -74.006,
       accuracy: 1000,
       timestamp: Date.now(),
     };

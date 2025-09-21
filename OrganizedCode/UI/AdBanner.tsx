@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, StyleSheet} from 'react-native';
 import {adService} from '../Storage/adService';
-import { theme } from '../../src/app-theme';
+import {theme} from '../../src/app-theme';
 
 interface AdBannerProps {
   isPro: boolean;

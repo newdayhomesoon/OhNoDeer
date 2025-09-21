@@ -9,11 +9,16 @@ export const firebaseConfig = {
   appId: 'your-app-id',
 };
 
-export function isPlaceholderFirebaseConfig(cfg: typeof firebaseConfig = firebaseConfig): boolean {
+export function isPlaceholderFirebaseConfig(
+  cfg: typeof firebaseConfig = firebaseConfig,
+): boolean {
   return (
-    !cfg.apiKey || cfg.apiKey === 'your-api-key' ||
-    !cfg.messagingSenderId || cfg.messagingSenderId === 'your-sender-id' ||
-    !cfg.appId || cfg.appId === 'your-app-id'
+    !cfg.apiKey ||
+    cfg.apiKey === 'your-api-key' ||
+    !cfg.messagingSenderId ||
+    cfg.messagingSenderId === 'your-sender-id' ||
+    !cfg.appId ||
+    cfg.appId === 'your-app-id'
   );
 }
 

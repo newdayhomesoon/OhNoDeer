@@ -156,15 +156,6 @@ export const signInUser = async (): Promise<User | null> => {
   try {
     console.log('[DEBUG] signInUser - Starting anonymous sign in...');
 
-    // Ensure persistence is set before signing in
-    console.log('[DEBUG] signInUser - Ensuring auth persistence is set...');
-    try {
-      await setPersistence(auth, getReactNativePersistence(AsyncStorage));
-      console.log('[DEBUG] signInUser - Auth persistence confirmed');
-    } catch (persistenceError) {
-      console.warn('[DEBUG] signInUser - Could not set persistence, continuing anyway:', persistenceError);
-    }
-
     const result = await signInAnonymously(auth);
     console.log('[DEBUG] signInUser - Anonymous sign in successful, user:', result.user.uid);
     console.log('[DEBUG] signInUser - User details:', {

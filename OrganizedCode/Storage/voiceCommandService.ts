@@ -5,9 +5,9 @@ import {WildlifeReportsService} from './wildlifeReportsService';
 
 class VoiceCommandService {
   private isInitialized = false;
-  private ttsStartSubscription: { remove: () => void } | null = null;
-  private ttsFinishSubscription: { remove: () => void } | null = null;
-  private ttsCancelSubscription: { remove: () => void } | null = null;
+  private ttsStartSubscription: {remove: () => void} | null = null;
+  private ttsFinishSubscription: {remove: () => void} | null = null;
+  private ttsCancelSubscription: {remove: () => void} | null = null;
 
   async initialize(): Promise<boolean> {
     if (this.isInitialized) {

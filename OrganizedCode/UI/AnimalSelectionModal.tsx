@@ -8,7 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import {AnimalCategories, AnimalType} from '../CoreLogic/types';
-import { theme } from '../../src/app-theme';
+import {theme} from '../../src/app-theme';
 
 interface AnimalSelectionModalProps {
   visible: boolean;
