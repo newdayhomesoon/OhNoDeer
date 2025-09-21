@@ -5,8 +5,8 @@ workflows:
       groups:
         - android-signing-key-release
       vars:
-        REACT_NATIVE_VERSION: 0.72.17
-        NODE_VERSION: 18.20.4
+        REACT_NATIVE_VERSION: "0.72.17"
+        NODE_VERSION: "18.20.4"
         NPM_CONFIG_LEGACY_PEER_DEPS: "true"
     scripts:
       - name: Set up Node.js
