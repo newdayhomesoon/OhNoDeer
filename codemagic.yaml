@@ -77,9 +77,8 @@ workflows:
           chmod +x ../node_modules/react-native/sdks/hermesc/osx-bin/hermesc || true
           ./gradlew --refresh-dependencies
           ./gradlew assemblePlayRelease
-    publishing:
-      artifacts:
-        - android/app/build/outputs/**/*.apk
+    artifacts:
+      - android/app/build/outputs/**/*.apk
 
   diagnostics:
     name: CI Diagnostics
@@ -157,7 +156,6 @@ workflows:
           echo "Uploading artifacts (APK and logs)"
           ls -la android/app/build/outputs/apk/debug || true
           ls -la codemagic-logcat.txt || true
-    publishing:
-      artifacts:
-        - android/app/build/outputs/apk/debug/*.apk
-        - codemagic-logcat.txt
+    artifacts:
+      - android/app/build/outputs/apk/debug/*.apk
+      - codemagic-logcat.txt
