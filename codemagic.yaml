@@ -1,9 +1,7 @@
 workflows:
   android-build:
-    name: Android Build
+    name: Android Debug Build
     environment:
-      groups:
-        - android-signing-key-release
       vars:
         REACT_NATIVE_VERSION: "0.72.17"
         NODE_VERSION: "18.20.4"
@@ -70,12 +68,12 @@ workflows:
             find android/app/src/main/assets/ -name "*.bundle" 2>/dev/null || echo "No bundle files found"
             exit 1
           fi
-      - name: Build Android Release
+      - name: Build Android Debug
         script: |
           cd android
           chmod +x ./gradlew
           chmod +x ../node_modules/react-native/sdks/hermesc/osx-bin/hermesc || true
           ./gradlew --refresh-dependencies
-          ./gradlew assemblePlayRelease
+          ./gradlew assembleDebug
     artifacts:
-      - android/app/build/outputs/**/*.apk
+      - android/app/build/outputs/apk/debug/*.apk
