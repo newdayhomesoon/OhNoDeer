@@ -612,7 +612,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         const { db } = await import('../Storage/firebase/service');
 
         const q = query(
-          collection(db, 'sightings'),
+          collection(db, 'wildlife_reports'),
           orderBy('timestamp', 'desc'),
           limit(3)
         );
@@ -1192,7 +1192,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           const { db } = await import('../Storage/firebase/service');
                           
                           const q = query(
-                            collection(db, 'sightings'),
+                            collection(db, 'wildlife_reports'),
                             orderBy('timestamp', 'desc'),
                             limit(10)
                           );
@@ -1212,7 +1212,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
                           showMessage({
                             type: 'info',
                             title: 'Firestore Debug',
-                            message: `Found ${docs.length} documents in sightings collection`,
+                            message: `Found ${docs.length} documents in wildlife_reports collection`,
                             buttons: [{ text: 'OK', onPress: () => {} }]
                           });
                         } catch (error) {

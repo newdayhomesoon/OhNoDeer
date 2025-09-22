@@ -304,7 +304,7 @@ export const addWildlifeReport = async (
     };
 
     console.log('[DEBUG] addWildlifeReport - Adding to collection with data:', { ...reportData, userId: user.uid });
-    const docRef = await addDoc(collection(db, 'sightings'), {
+    const docRef = await addDoc(collection(db, 'wildlife_reports'), {
       ...reportData,
       userId: user.uid,
     });
@@ -326,7 +326,7 @@ export const getUserReports = async (
     console.log('[DEBUG] Firebase.getUserReports - User ID length:', userId?.length);
     
     const q = query(
-      collection(db, 'sightings'),
+      collection(db, 'wildlife_reports'),
       where('userId', '==', userId),
       orderBy('timestamp', 'desc'),
       limit(50),
@@ -343,7 +343,7 @@ export const getUserReports = async (
       console.log('[DEBUG] Firebase.getUserReports - Checking if there are any documents in the collection at all...');
       
       // Check if there are any documents in the collection
-      const allDocsQuery = query(collection(db, 'sightings'), limit(1));
+      const allDocsQuery = query(collection(db, 'wildlife_reports'), limit(1));
       const allDocsSnapshot = await getDocs(allDocsQuery);
       console.log('[DEBUG] Firebase.getUserReports - Total documents in collection:', allDocsSnapshot.size);
       
@@ -384,7 +384,7 @@ export const getRecentSightings = async (
     console.log('[DEBUG] Firebase.getRecentSightings - Timestamp limit:', timestampLimit.toDate());
     
     const q = query(
-      collection(db, 'sightings'),
+      collection(db, 'wildlife_reports'),
       where('timestamp', '>=', timestampLimit),
       orderBy('timestamp', 'desc'),
       limit(100), // Get more to allow for location filtering

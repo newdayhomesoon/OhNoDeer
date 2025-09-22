@@ -1,6 +1,14 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Wildlife reports collection - public read access, authenticated users can create/update their own
+    match /wildlife_reports/{reportId} {
+      allow read: if true; // Public read access for wildlife reports
+      allow create: if request.auth != null; // Only authenticated users can create reports
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId; // Users can only modify their own reports
+    }sion = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
     // Sightings collection - public read access, authenticated users can create/update their own
     match /sightings/{sightingId} {
       allow read: if true; // Public read access for all users including anonymous
