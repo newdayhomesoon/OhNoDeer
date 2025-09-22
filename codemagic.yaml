@@ -77,19 +77,26 @@ workflows:
           chmod +x ../node_modules/react-native/sdks/hermesc/osx-bin/hermesc || true
           ./gradlew --refresh-dependencies
           ./gradlew assemblePlayRelease
-    artifacts:
-      - android/app/build/outputs/**/*.apk
+    publishing:
+      artifacts:
+        - android/app/build/outputs/**/*.apk
 
   diagnostics:
     name: CI Diagnostics
     environment:
       vars:
-        FIREBASE_API_KEY: "REPLACE_ME"
-        FIREBASE_AUTH_DOMAIN: "REPLACE_ME"
-        FIREBASE_PROJECT_ID: "REPLACE_ME"
-        FIREBASE_STORAGE_BUCKET: "REPLACE_ME"
-        FIREBASE_MESSAGING_SENDER_ID: "REPLACE_ME"
-        FIREBASE_APP_ID: "REPLACE_ME"
+        FIREBASE_API_KEY:
+          value: "REPLACE_ME"
+        FIREBASE_AUTH_DOMAIN:
+          value: "REPLACE_ME"
+        FIREBASE_PROJECT_ID:
+          value: "REPLACE_ME"
+        FIREBASE_STORAGE_BUCKET:
+          value: "REPLACE_ME"
+        FIREBASE_MESSAGING_SENDER_ID:
+          value: "REPLACE_ME"
+        FIREBASE_APP_ID:
+          value: "REPLACE_ME"
     scripts:
       - name: Install dependencies
         script: |
@@ -150,6 +157,7 @@ workflows:
           echo "Uploading artifacts (APK and logs)"
           ls -la android/app/build/outputs/apk/debug || true
           ls -la codemagic-logcat.txt || true
-    artifacts:
-      - android/app/build/outputs/apk/debug/*.apk
-      - codemagic-logcat.txt
+    publishing:
+      artifacts:
+        - android/app/build/outputs/apk/debug/*.apk
+        - codemagic-logcat.txt
