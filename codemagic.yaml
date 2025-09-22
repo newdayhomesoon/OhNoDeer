@@ -84,12 +84,12 @@ workflows:
     name: CI Diagnostics
     environment:
       vars:
-        FIREBASE_API_KEY: "REPLACE_ME"
-        FIREBASE_AUTH_DOMAIN: "REPLACE_ME"
-        FIREBASE_PROJECT_ID: "REPLACE_ME"
-        FIREBASE_STORAGE_BUCKET: "REPLACE_ME"
-        FIREBASE_MESSAGING_SENDER_ID: "REPLACE_ME"
-        FIREBASE_APP_ID: "REPLACE_ME"
+        FIREBASE_API_KEY: "AIzaSyDummyApiKeyForValidation"
+        FIREBASE_AUTH_DOMAIN: "dummy-project.firebaseapp.com"
+        FIREBASE_PROJECT_ID: "dummy-project-id"
+        FIREBASE_STORAGE_BUCKET: "dummy-project.appspot.com"
+        FIREBASE_MESSAGING_SENDER_ID: "123456789012"
+        FIREBASE_APP_ID: "1:123456789012:android:abcdef123456"
     scripts:
       - name: Install dependencies
         script: |
