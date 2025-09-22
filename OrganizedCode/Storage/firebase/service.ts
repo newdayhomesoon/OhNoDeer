@@ -319,17 +319,19 @@ export const addWildlifeReport = async (
 
 export const getUserReports = async (
   userId: string,
+  limitCount: number = 50,
 ): Promise<WildlifeReport[]> => {
   try {
     console.log('[DEBUG] Firebase.getUserReports - Querying for userId:', userId);
     console.log('[DEBUG] Firebase.getUserReports - User ID type:', typeof userId);
     console.log('[DEBUG] Firebase.getUserReports - User ID length:', userId?.length);
+    console.log('[DEBUG] Firebase.getUserReports - Limit:', limitCount);
     
     const q = query(
       collection(db, 'wildlife_reports'),
       where('userId', '==', userId),
       orderBy('timestamp', 'desc'),
-      limit(50),
+      limit(limitCount),
     );
 
     console.log('[DEBUG] Firebase.getUserReports - Query object created');
@@ -404,6 +406,37 @@ export const getRecentSightings = async (
   } catch (error) {
     console.error('[DEBUG] Firebase.getRecentSightings - Error getting recent sightings:', error);
     console.error('[DEBUG] Firebase.getRecentSightings - Error details:', error instanceof Error ? error.message : error);
+    return [];
+  }
+};
+
+// Get the most recent sightings with a specific limit (no time filtering)
+export const getMostRecentSightings = async (
+  limitCount: number = 5,
+): Promise<WildlifeReport[]> => {
+  try {
+    console.log('[DEBUG] Firebase.getMostRecentSightings - Getting', limitCount, 'most recent sightings');
+    
+    const q = query(
+      collection(db, 'wildlife_reports'),
+      orderBy('timestamp', 'desc'),
+      limit(limitCount),
+    );
+
+    console.log('[DEBUG] Firebase.getMostRecentSightings - Executing query...');
+    const querySnapshot = await getDocs(q);
+    console.log('[DEBUG] Firebase.getMostRecentSightings - Query completed. Snapshot size:', querySnapshot.size);
+    
+    const reports = querySnapshot.docs.map((doc: any) => {
+      const data = doc.data() as WildlifeReport;
+      return data;
+    });
+    
+    console.log('[DEBUG] Firebase.getMostRecentSightings - Total reports found:', reports.length);
+    return reports;
+  } catch (error) {
+    console.error('[DEBUG] Firebase.getMostRecentSightings - Error getting most recent sightings:', error);
+    console.error('[DEBUG] Firebase.getMostRecentSightings - Error details:', error instanceof Error ? error.message : error);
     return [];
   }
 };

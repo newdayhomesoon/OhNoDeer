@@ -2,6 +2,7 @@ import {
   addWildlifeReport,
   getUserReports,
   getRecentSightings,
+  getMostRecentSightings,
   checkNearbyHotspots,
   triggerHotspotUpdate,
   signInUser,
@@ -109,8 +110,8 @@ export const WildlifeReportsService = {
     }
   },
 
-  // Get user's recent reports
-  async getUserReports(limit: number = 50): Promise<SightingReport[]> {
+  // Get user's recent reports (for profile - get all reports, no limit)
+  async getUserReports(limit: number = 1000): Promise<SightingReport[]> {
     try {
       console.log('[DEBUG] WildlifeReportsService.getUserReports called with limit:', limit);
       const user = getCurrentUser();
@@ -121,7 +122,7 @@ export const WildlifeReportsService = {
       }
 
       console.log('[DEBUG] WildlifeReportsService - Calling Firebase getUserReports for user:', user.uid);
-      const firebaseReports = await getUserReports(user.uid);
+      const firebaseReports = await getUserReports(user.uid, limit);
       console.log('[DEBUG] WildlifeReportsService - Firebase reports received:', firebaseReports.length);
       console.log('[DEBUG] WildlifeReportsService - Raw Firebase reports:', firebaseReports);
       
@@ -170,6 +171,27 @@ export const WildlifeReportsService = {
       return appReports.slice(0, 20); // Limit to 20 most recent
     } catch (error) {
       console.error('[DEBUG] WildlifeReportsService.getRecentSightings - Error getting recent sightings:', error);
+      return [];
+    }
+  },
+
+  // Get the most recent sightings (for Recent Sightings tab - exactly 5 most recent from all users)
+  async getMostRecentSightings(limit: number = 5): Promise<SightingReport[]> {
+    try {
+      console.log('[DEBUG] WildlifeReportsService.getMostRecentSightings called with limit:', limit);
+      
+      console.log('[DEBUG] WildlifeReportsService - Calling Firebase getMostRecentSightings');
+      const firebaseReports = await getMostRecentSightings(limit);
+      console.log('[DEBUG] WildlifeReportsService - Firebase most recent reports received:', firebaseReports.length);
+      
+      const appReports = firebaseReports
+        .map(firebaseToAppReport)
+        .sort((a, b) => b.timestamp - a.timestamp);
+      
+      console.log('[DEBUG] WildlifeReportsService - Final most recent reports count:', appReports.length);
+      return appReports;
+    } catch (error) {
+      console.error('[DEBUG] WildlifeReportsService.getMostRecentSightings - Error:', error);
       return [];
     }
   },

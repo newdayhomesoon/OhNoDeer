@@ -538,12 +538,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         return;
       }
 
-      console.log('[DEBUG] User authenticated, fetching recent sightings from all users...');
-      const sightings = await WildlifeReportsService.getRecentSightings(12, currentLocation ? {
-        latitude: currentLocation.latitude,
-        longitude: currentLocation.longitude,
-        accuracy: currentLocation.accuracy,
-      } : undefined);
+      console.log('[DEBUG] User authenticated, fetching 5 most recent sightings from all users...');
+      const sightings = await WildlifeReportsService.getMostRecentSightings(5);
       console.log('[DEBUG] Raw sightings data from service:', sightings);
       console.log('[DEBUG] Number of sightings loaded:', sightings.length);
       
@@ -564,8 +560,8 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
       await saveSightingsToCache(sightings);
       console.log('[DEBUG] Recent sightings state updated and cached:', sightings);
       
-      // Calculate animal counters based on user's own reports
-      const userSightings = await WildlifeReportsService.getUserReports(50);
+      // Calculate animal counters based on user's own reports (get all reports for accurate counting)
+      const userSightings = await WildlifeReportsService.getUserReports(1000);
       const counters = { 
         deer: 0, 
         bear: 0, 
@@ -614,7 +610,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         const q = query(
           collection(db, 'wildlife_reports'),
           orderBy('timestamp', 'desc'),
-          limit(3)
+          limit(5)  // Show 5 most recent sightings
         );
 
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -1360,7 +1356,7 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
 
                     <Text style={styles.subSectionTitle}>Recent Reports</Text>
                     <View style={styles.recentReportsList}>
-                      {recentSightings.slice(0, 3).map((sighting, index) => (
+                      {recentSightings.slice(0, 5).map((sighting, index) => (
                         <View key={index} style={styles.recentReportItem}>
                           <Text style={styles.recentReportText}>
                             {sighting.type.charAt(0).toUpperCase() + sighting.type.slice(1)}- {sighting.quantity} Reported, {formatLocation(sighting.location.latitude, sighting.location.longitude)}
