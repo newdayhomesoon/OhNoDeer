@@ -83,13 +83,8 @@ workflows:
   diagnostics:
     name: CI Diagnostics
     environment:
-      vars:
-        FIREBASE_API_KEY: "AIzaSyDummyApiKeyForValidation"
-        FIREBASE_AUTH_DOMAIN: "dummy-project.firebaseapp.com"
-        FIREBASE_PROJECT_ID: "dummy-project-id"
-        FIREBASE_STORAGE_BUCKET: "dummy-project.appspot.com"
-        FIREBASE_MESSAGING_SENDER_ID: "123456789012"
-        FIREBASE_APP_ID: "1:123456789012:android:abcdef123456"
+      groups:
+        - firebase-config
     scripts:
       - name: Install dependencies
         script: |
