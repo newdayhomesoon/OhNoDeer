@@ -67,5 +67,14 @@ subprojects { sub ->
                 targetCompatibility JavaVersion.VERSION_11
             }
         }
+        
+        // Fix Kotlin JVM target compatibility for react-native-iap and other libraries
+        if (sub.hasProperty('android')) {
+            sub.tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile) {
+                kotlinOptions {
+                    jvmTarget = "11"
+                }
+            }
+        }
     }
 }

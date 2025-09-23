@@ -16,6 +16,7 @@ workflows:
         script: |
           rm -rf node_modules
           rm -f package-lock.json
+          rm -f yarn.lock
           rm -rf android/app/build
           rm -rf android/build
           rm -rf android/.gradle
@@ -23,7 +24,7 @@ workflows:
           rm -f android/app/src/main/assets/index.android.bundle
           npm cache clean --force
           npm cache verify
-          npm install --legacy-peer-deps
+          npm install --legacy-peer-deps --exact
       - name: Bundle JS for Android
         script: |
           mkdir -p android/app/src/main/assets
@@ -74,6 +75,6 @@ workflows:
           chmod +x ./gradlew
           chmod +x ../node_modules/react-native/sdks/hermesc/osx-bin/hermesc || true
           ./gradlew --refresh-dependencies
-          ./gradlew assembleDebug
+          ./gradlew assemblePlayDebug
     artifacts:
-      - android/app/build/outputs/apk/debug/*.apk
+      - android/app/build/outputs/apk/play/debug/*.apk
