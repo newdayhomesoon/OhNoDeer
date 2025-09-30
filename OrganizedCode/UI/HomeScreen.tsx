@@ -538,13 +538,20 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         return;
       }
 
-      console.log('[DEBUG] User authenticated, fetching 5 most recent sightings from all users...');
-      const sightings = await WildlifeReportsService.getMostRecentSightings(5);
-      console.log('[DEBUG] Raw sightings data from service:', sightings);
-      console.log('[DEBUG] Number of sightings loaded:', sightings.length);
+      console.log('[DEBUG] User authenticated, fetching recent sightings from all users...');
+      // Temporarily use getRecentSightings with time filter instead of getMostRecentSightings
+      const sightings = await WildlifeReportsService.getRecentSightings(24, currentLocation ? {
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        accuracy: currentLocation.accuracy,
+      } : undefined);
+      // Limit to 5 most recent in UI for now
+      const limitedSightings = sightings.slice(0, 5);
+      console.log('[DEBUG] Raw sightings data from service:', limitedSightings);
+      console.log('[DEBUG] Number of sightings loaded:', limitedSightings.length);
       
       // Log each sighting for debugging
-      sightings.forEach((sighting, index) => {
+      limitedSightings.forEach((sighting, index) => {
         console.log(`[DEBUG] Sighting ${index}:`, {
           id: sighting.id,
           type: sighting.type,
@@ -555,10 +562,10 @@ export default function HomeScreen({onLogout}: HomeScreenProps) {
         });
       });
       
-      setRecentSightings(sightings);
+      setRecentSightings(limitedSightings);
       // Cache the sightings data
-      await saveSightingsToCache(sightings);
-      console.log('[DEBUG] Recent sightings state updated and cached:', sightings);
+      await saveSightingsToCache(limitedSightings);
+      console.log('[DEBUG] Recent sightings state updated and cached:', limitedSightings);
       
       // Calculate animal counters based on user's own reports (get all reports for accurate counting)
       const userSightings = await WildlifeReportsService.getUserReports(1000);

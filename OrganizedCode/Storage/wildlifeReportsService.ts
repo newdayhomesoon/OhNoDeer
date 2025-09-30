@@ -2,7 +2,6 @@ import {
   addWildlifeReport,
   getUserReports,
   getRecentSightings,
-  getMostRecentSightings,
   checkNearbyHotspots,
   triggerHotspotUpdate,
   signInUser,
@@ -175,7 +174,9 @@ export const WildlifeReportsService = {
     }
   },
 
+  // TODO: Re-enable getMostRecentSightings after debugging bundle issue
   // Get the most recent sightings (for Recent Sightings tab - exactly 5 most recent from all users)
+  /*
   async getMostRecentSightings(limit: number = 5): Promise<SightingReport[]> {
     try {
       console.log('[DEBUG] WildlifeReportsService.getMostRecentSightings called with limit:', limit);
@@ -195,6 +196,7 @@ export const WildlifeReportsService = {
       return [];
     }
   },
+  */
 
   // Get nearby hotspots
   async getNearbyHotspots(
